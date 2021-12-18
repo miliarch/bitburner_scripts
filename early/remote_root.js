@@ -1,26 +1,13 @@
 /**
 * @param {NS} ns
 **/
+// Root specified server remotely
+import {playerPortOpeners} from 'lib.js';
 export async function main(ns) {
     var target = ns.args[0];
+    var portOpeners = playerPortOpeners(ns);
     var portsRequired = ns.getServerNumPortsRequired(target);
     if (ns.hasRootAccess(target) == false) {
-        var portOpeners = [];
-        if (ns.fileExists("BruteSSH.exe", "home")) {
-            portOpeners.push('brutessh');
-        }
-        if (ns.fileExists("FTPCrack.exe", "home")) {
-            portOpeners.push('ftpcrack');
-        }
-        if (ns.fileExists("relaySMTP.exe", "home")) {
-            portOpeners.push('relaysmtp');
-        }
-        if (ns.fileExists("HTTPWorm.exe", "home")) {
-            portOpeners.push('httpworm');
-        }
-        if (ns.fileExists("SQLInject.exe", "home")) {
-            portOpeners.push('sqlinject');
-        }
         if (portOpeners.length >= portsRequired) {
             for (var i in portOpeners) {
                 switch (portOpeners[i]) {
