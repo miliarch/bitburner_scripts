@@ -2,7 +2,7 @@
 export async function main(ns) {
     let urls = [
         'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/early/deploy_worker.js',
-        'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/early/early_fetch_all.js early_fetch_all.js',
+        'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/early/early_fetch_all.js',
         'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/early/get_info.js',
         'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/early/lib.js',
         'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/early/remote_root.js',
