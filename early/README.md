@@ -4,6 +4,12 @@ At the very start of the game, when you're strapped for RAM and money (which pre
 
 Each script in this section contains some amount of commentary about what the code is doing when logic isn't obvious, and almost all depend on each other to successfully execute (scanning, deployment, and informational scripts). Start with workers, move on to deployment, then scanning, and make sure all dependent scripts are available. You'll be fine.
 
+You can fetch all scripts with [early_fetch_all.js](early_fetch_all.js):
+```
+wget https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/early/early_fetch_all.js early_fetch_all.js
+run early_fetch_all.js
+```
+
 ## Dependency map
 
 Required relationships between scripts:
