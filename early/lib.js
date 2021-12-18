@@ -1,9 +1,12 @@
 /** @param {NS} ns **/
+// Function library for cross-script use
 export function roundHundreds(val) {
+    // TODO: Better to use ns.nFormat(value, 0.00) in presentation code; function needs cleanup
     return Math.round(val * 100) / 100;
 }
 
 export function roundWhole(val) {
+// TODO: Better to use ns.nFormat(value, 0) in presentation code; function needs cleanup
     return Math.round(val);
 }
 
@@ -12,6 +15,7 @@ export function calcPercentage(val1, val2) {
 }
 
 export function formatMoney(val) {
+    // TODO: Better to use ns.nFormat(value, 0.00a) in presentation code; function needs cleanup
     return Number(val).toLocaleString();
 }
 
@@ -20,6 +24,7 @@ export function formatSeconds(val) {
 }
 
 export function playerPortOpeners(ns) {
+    // Return list of port openers available to the player
     var portOpeners = [];
     if (ns.fileExists("BruteSSH.exe", "home")) {
         portOpeners.push('brutessh');
@@ -40,18 +45,22 @@ export function playerPortOpeners(ns) {
 }
 
 export function canHack(ns, server) {
+    // Check whether provided server object can be hacked
     return ns.getHackingLevel() >= server.requiredHackingSkill;
 }
 
 export function canRoot(ns, server) {
+    // Check whether provided server object can be rooted
     return playerPortOpeners(ns).length >= (server.numOpenPortsRequired - server.openPortCount);
 }
 
 export function freeRam(server) {
+    // Return free ram on server object
     return server.maxRam - server.ramUsed;
 }
 
 export function findHostsRecursive(ns, target, depth=1, exclusions=[], seen=[]) {
+    // Return list of unique hosts from given target to given depth with given hostname exclusions
     var servers = ns.scan(target).filter(function(i) { return !exclusions.includes(i); });  // Scan target; remove exclusion servers
     for (var server of servers) {
         var pushCount = 0
@@ -68,10 +77,12 @@ export function findHostsRecursive(ns, target, depth=1, exclusions=[], seen=[]) 
 }
 
 export function getIdealGrowthThreads(ns, cores, target, multiplier) {
+    // Get ideal number of growth threads to reach desired money multiplier
     return Math.ceil(ns.growthAnalyze(target, multiplier, cores));
 }
 
 export function hostReport(ns, target, moneyModifier=0.75, growthModifier=1.25, securityModifier=5) {
+    // Report host status to console
     // vars
     var server = ns.getServer(target);
     var maxThreads = 100;
