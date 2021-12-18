@@ -40,24 +40,24 @@ Local (from any):
 run worker.js
 ```
 
-Remote (run on and target n00dles):
+Remote (run on and target `n00dles`):
 ```
 run deploy_worker.js worker.js n00dles
 ```
 
-Remote on target host (run on home, target n00dles):
+Remote on target host (run on `home`, target `n00dles`):
 ```
 run deploy_worker.js worker.js home n00dles
 ```
 
 ### Hack server at specific thread count
 
-Remote (run on n00dles, target n00dles):
+Remote (run on `n00dles`, target `n00dles`):
 ```
 run deploy_worker.js worker.js n00dles n00dles 2
 ```
 
-Remote on target host (run on home, target n00dles):
+Remote on target host (run on `home`, target `n00dles`):
 ```
 run deploy_worker.js worker.js home n00dles 30
 ```
@@ -70,24 +70,24 @@ run get_info.js n00dles
 
 ### Scan for and hack servers
 
-Depth 1 from home:
+Depth 1 from `home`:
 ```
 run scan_deploy_workers.js
 ```
 
-Depth 3 from n00dles:
+Depth 3 from `n00dles`:
 ```
 run scan_deploy_workers.js n00dles 3
 ```
 
 ### Scan for and get informational reports about servers
 
-Depth 1 from home:
+Depth 1 from `home`:
 ```
 run scan_get_info.js
 ```
 
-Depth 5 from home:
+Depth 5 from `home`:
 ```
 run scan_get_info.js home 5
 ```
