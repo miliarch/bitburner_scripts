@@ -5,6 +5,8 @@ import * as lib from 'lib.js';
 async function rootServer(ns, server) {
     if (!ns.hasRootAccess(server)) {
         ns.run('remote_root.js', 1, server);
+        // short sleep, root evidently isn't instant
+        await ns.sleep(500);
     }
 }
 
