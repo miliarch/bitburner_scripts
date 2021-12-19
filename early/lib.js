@@ -203,7 +203,6 @@ export function placeWorker(ns, host, target, threads) {
     var out_str = ''
     if (success) {
         out_str = `${host.hostname}: ran ${target.script} ${threads} [${args}]`
-        ns.toast(out_str, 'info');
     } else {
         out_str = `${host.hostname}: failed to run ${target.script} ${threads} [${args}]`;
         ns.toast(out_str, 'warning');
