@@ -11,11 +11,23 @@ export async function main(ns) {
     ]
     for (let url of urls) {
         let filename = url.substring(url.lastIndexOf('/') + 1);
-        var success = await ns.wget(url, filename);
+        let rmhost = ns.getServer().hostname;
+        var out_str = '';
+        var success = false;
+        success = ns.rm(filename, rmhost);
         if (success) {
-            ns.tprint(`Fetched ${filename} successfully`);
+            out_str = `Successfully removed ${filename} from ${rmhost}`;
         } else {
-            ns.tprint(`Failed to fetch ${filename} - check URL: ${url}`);
+            out_str = `Failed to remove ${filename} from ${rmhost}`;
         }
+        ns.tprint(out_str);
+        var success = false;
+        success = await ns.wget(url, filename);
+        if (success) {
+            out_str = `Successfully fetched ${url} as ${filename}`
+        } else {
+            out_str = `Failed to fetch ${ur} as ${filename}`, 'warning'
+        }
+        ns.tprint(out_str);
     }
 }
