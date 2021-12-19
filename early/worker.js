@@ -16,8 +16,9 @@ export async function main(ns) {
 
         // workflows
         if (!canHack) {
-            var out_str = `Cannot hack ${target} - player hacking level too low (${playerHackSkill}/${target.requiredHackingSkill})`
+            var out_str = `Cannot hack ${target}: (${playerHackSkill}/${target.requiredHackingSkill})`
             ns.print(out_str);
+            ns.toast(out_str, warning);
             await ns.sleep(1000 * 600)  // Wait 10 mins and try again
         } else if (weaken) {
             await ns.weaken(target);

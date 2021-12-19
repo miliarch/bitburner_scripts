@@ -7,6 +7,7 @@ export async function main(ns) {
     var target = ns.args[0];
     var portOpeners = playerPortOpeners(ns);
     var portsRequired = ns.getServerNumPortsRequired(target);
+    out_str = ''
     if (ns.hasRootAccess(target) == false) {
         if (portOpeners.length >= portsRequired) {
             for (var i in portOpeners) {
@@ -19,9 +20,9 @@ export async function main(ns) {
                 }
             }
             ns.nuke(target);
-            ns.tprint(`${target} rooted!`);
+            ns.toast(`${target} rooted!`, 'success');
         } else {
-            ns.tprint(`Cannot root ${target} - too many open ports required (${portOpeners.length}/${portsRequired})`);
+            ns.toast(`Cannot root ${target} (${portOpeners.length}/${portsRequired})`, 'warning');
         }
     }
 }

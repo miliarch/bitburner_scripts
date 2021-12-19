@@ -1,5 +1,9 @@
 /** @param {NS} ns **/
 // Function library for cross-script use
+export async function main(ns) {
+    ns.tprint('use me right, buddy')
+}
+
 export function roundHundreds(val) {
     // TODO: Better to use ns.nFormat(value, 0.00) in presentation code; function needs cleanup
     return Math.round(val * 100) / 100;
@@ -23,6 +27,31 @@ export function formatSeconds(val) {
     return roundHundreds(val / 1000);
 }
 
+export function getIdealGrowthThreads(ns, cores, target, multiplier) {
+    // Get ideal number of growth threads to reach desired growth multiplier
+    return Math.ceil(ns.growthAnalyze(target, multiplier, cores));
+}
+
+export function estimateHackThreads(ns, target, amount) {
+    // Estimate number of hack threads to reach desired money amount
+    return Math.ceil(ns.hackAnalyzeThreads(target, amount));
+}
+
+export function canHack(ns, server) {
+    // Check whether provided server object can be hacked
+    return ns.getHackingLevel() >= server.requiredHackingSkill;
+}
+
+export function canRoot(ns, server) {
+    // Check whether provided server object can be rooted
+    return playerPortOpeners(ns).length >= (server.numOpenPortsRequired - server.openPortCount);
+}
+
+export function freeRam(server) {
+    // Return free ram on server object
+    return server.maxRam - server.ramUsed;
+}
+
 export function playerPortOpeners(ns) {
     // Return list of port openers available to the player
     var portOpeners = [];
@@ -44,23 +73,9 @@ export function playerPortOpeners(ns) {
     return portOpeners
 }
 
-export function canHack(ns, server) {
-    // Check whether provided server object can be hacked
-    return ns.getHackingLevel() >= server.requiredHackingSkill;
-}
-
-export function canRoot(ns, server) {
-    // Check whether provided server object can be rooted
-    return playerPortOpeners(ns).length >= (server.numOpenPortsRequired - server.openPortCount);
-}
-
-export function freeRam(server) {
-    // Return free ram on server object
-    return server.maxRam - server.ramUsed;
-}
-
 export function findHostsRecursive(ns, target, depth=1, exclusions=[], seen=[]) {
     // Return list of unique hosts from given target to given depth with given hostname exclusions
+    ns.disableLog('ALL');
     var servers = ns.scan(target).filter(function(i) { return !exclusions.includes(i); });  // Scan target; remove exclusion servers
     for (var server of servers) {
         var pushCount = 0
@@ -76,9 +91,28 @@ export function findHostsRecursive(ns, target, depth=1, exclusions=[], seen=[]) 
     return seen
 }
 
-export function getIdealGrowthThreads(ns, cores, target, multiplier) {
-    // Get ideal number of growth threads to reach desired money multiplier
-    return Math.ceil(ns.growthAnalyze(target, multiplier, cores));
+export function calcAvailableThreads(freeRam, ramCost) {
+    return Math.floor(freeRam / ramCost);
+}
+
+
+export function generateUniqueProcessArgs(ns, args, processes) {
+    // Increment second argument (integer), assuming target hostname as first member
+    var uniqueArgs = args;
+    var done = false;
+    var seen = []
+    if (processes) {
+        for (var p of processes) {
+            if (uniqueArgs[0] == p.args[0]) {
+                seen.push(p.args[1]);
+            }
+        }
+        seen = seen.sort((a, b) => (a > b) ? 1 : -1)  // sort ascending
+        for (let i of seen) {
+            uniqueArgs[1] = (uniqueArgs[1] == i) ? uniqueArgs[1] += 1 : uniqueArgs[1];
+        }
+    }
+    return uniqueArgs;
 }
 
 export function hostReport(ns, target, moneyModifier=0.75, growthModifier=1.25, securityModifier=5) {
@@ -162,6 +196,61 @@ export function hostReport(ns, target, moneyModifier=0.75, growthModifier=1.25, 
     return report;
 }
 
-export async function main(ns) {
-    ns.tprint('use me right, buddy')
+export function placeWorker(ns, host, target, threads) {
+    // deploy script on host toward target
+    let args = generateUniqueProcessArgs(ns, [target.hostname, 0], host.processes);
+    let success = ns.exec(target.script, host.hostname, threads, ...args);
+    var out_str = ''
+    if (success) {
+        out_str = `${host.hostname}: ran ${target.script} ${threads} [${args}]`
+        ns.toast(out_str, 'info');
+    } else {
+        out_str = `${host.hostname}: failed to run ${target.script} ${threads} [${args}]`;
+        ns.info(out_str, 'warning');
+    }
+    ns.print(out_str);
+
+    return success
+}
+
+export async function evaluateAndPlace(ns, host, target) {
+    let needsPlacement = target.remainingThreads > 0;
+    let hostHasCapacity = host.freeRam >= target.scriptCost;
+    if (needsPlacement && hostHasCapacity) {
+        // placement hasn't occurred yet and can
+        let availableThreads = calcAvailableThreads(host.freeRam, target.scriptCost);
+        let placedThreads = (availableThreads > target.remainingThreads) ? target.remainingThreads : availableThreads;
+        await checkCopyScript(ns, host, target);
+        let success = await placeWorker(ns, host, target, placedThreads);
+        if (success) {
+            return placedThreads;
+        }
+    }
+    return 0;
+}
+
+export async function checkRootHost(ns, target) {
+    // make sure target is rooted
+    if (!target.hasAdminRights) {
+        ns.exec('remote_root.js', 'home', 1, target.hostname);
+        while (!ns.hasRootAccess(target.hostname)) {
+            await ns.sleep(50);
+        }
+        let out_str = `Successfully rooted ${target.hostname}`;
+        ns.toast(out_str);
+        ns.print(out_str);
+    }
+}
+
+export async function checkCopyScript(ns, host, target) {
+    // make sure file exists on target host
+    let success = await ns.scp(target.script, 'home', host.hostname);
+    var out_str = ''
+    if (success) {
+        out_str = `Copied ${target.script} from home to ${host.hostname}`
+    } else {
+        out_str = `Copying ${target.script} from home to ${host.hostname} failed`;
+        ns.toast(out_str, 'warning');
+    ns.print(out_str);
+    }
 }

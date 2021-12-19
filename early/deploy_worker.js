@@ -17,8 +17,10 @@ export async function main(ns) {
             var out_str = "";
             if (success) {
                 out_str = `Killed all processes on ${host} to make room`;
+                ns.toast(out_str, 'info')
             } else {
                 out_str = `Failed to kill all processes on ${host}`;
+                ns.toast(out_str, 'warning')
             }
             ns.tprint(out_str)
             threads = Math.floor(serverMaxRam / scriptCost);
@@ -34,8 +36,10 @@ export async function main(ns) {
     }
     if (success) {
         out_str = `'${scriptName} ${target}' deployed on ${host} with ${threads} threads`;
+        ns.toast(out_str, 'info')
     } else {
         out_str = `Failed to deploy '${scriptName} ${target}' on ${host} with ${threads} threads`;
+        ns.toast(out_str, 'warning')
     }
     ns.tprint(out_str);
 }
