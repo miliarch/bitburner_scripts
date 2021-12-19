@@ -7,6 +7,7 @@ export async function main(ns) {
         'http://localhost:3000/worker_hack.js',
         'http://localhost:3000/worker_weaken.js',
         'http://localhost:3000/fetch_dev_scripts.js',
+        'http://localhost:3000/hacknet_minder.js',
     ]
     for (let url of urls) {
         let filename = url.substring(url.lastIndexOf('/') + 1);
