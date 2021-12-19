@@ -5,5 +5,5 @@ export async function main(ns) {
     var result = await ns.hack(target);
     var out_str = `${target} hacked for \$${ns.nFormat(result, '0.00a')}`
     ns.print(out_str);
-    ns.toast(out_str);
+    ns.toast(out_str, 'success');
 }
