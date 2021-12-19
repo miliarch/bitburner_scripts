@@ -1,7 +1,10 @@
 /** @param {NS} ns **/
 export async function main(ns) {
+    ns.disableLog('ALL');
+
     // constants
     const maxExpenditureRatio = 0.05
+    const interval = 1000
 
     while (true) {
         // get player info
@@ -118,6 +121,6 @@ export async function main(ns) {
                 ns.print(out_str)
             }
         }
-        await ns.sleep(250);
+        await ns.sleep(interval);
     }
 }
