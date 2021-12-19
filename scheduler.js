@@ -85,6 +85,7 @@ export async function main(ns) {
                         server.remainingThreads = server.idealWeakenThreads;
                         server.scriptCost = weakenScriptCost;
                         server.script = weakenScript
+                        server.securityDiff = server.hackDifficulty - server.securityThreshold;
                         weakenTargets.push(server);
                     } else {
                         // Server needs to be grown before hack or weaken can happen
@@ -123,7 +124,7 @@ export async function main(ns) {
         for (var target of hackTargets) {
             for (var host of scriptHosts) {
                 // placement, finally
-                if (hackRam > hackScriptCost && totalFreeRam > hackScriptCost) {
+                if (totalFreeRam > hackScriptCost && target.remainingThreads) {
                     let placedThreads = await lib.evaluateAndPlace(ns, host, target);
                     if (placedThreads) {
                         // decrement counters
@@ -138,14 +139,23 @@ export async function main(ns) {
         // weaken scripts
         for (var target of weakenTargets) {
             for (var host of scriptHosts) {
+                // weaken impact only considers the running host - do some math and update counters
+                var threads = 1;
+                var weakenAmount = 0;
+                while (weakenAmount < target.securityDiff) {
+                    weakenAmount = ns.weakenAnalyze(threads, host.cpuCores);
+                    threads += 1
+                }
+                target.remainingThreads = threads
+
                 // placement, finally
-                if (weakenRam > weakenScriptCost && totalFreeRam > weakenScriptCost) {
+                if (totalFreeRam > weakenScriptCost && target.remainingThreads) {
                     let placedThreads = await lib.evaluateAndPlace(ns, host, target);
                     if (placedThreads) {
                         // decrement counters
+                        target.securityDiff -= ns.weakenAnalyze(placedThreads, host.cpuCores);
                         host.freeRam -= weakenScriptCost * placedThreads;
                         weakenRam -= weakenScriptCost * placedThreads;
-                        target.remainingThreads -= placedThreads;
                     }
                 }
             }
@@ -155,7 +165,7 @@ export async function main(ns) {
         for (var target of growTargets) {
             for (var host of scriptHosts) {
                 // placement, finally
-                if (growRam > growScriptCost && totalFreeRam > growScriptCost) {
+                if (totalFreeRam > growScriptCost && target.remainingThreads) {
                     let placedThreads = await lib.evaluateAndPlace(ns, host, target);
                     if (placedThreads) {
                         // decrement counters
