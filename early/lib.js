@@ -206,7 +206,7 @@ export function placeWorker(ns, host, target, threads) {
         ns.toast(out_str, 'info');
     } else {
         out_str = `${host.hostname}: failed to run ${target.script} ${threads} [${args}]`;
-        ns.info(out_str, 'warning');
+        ns.toast(out_str, 'warning');
     }
     ns.print(out_str);
 
