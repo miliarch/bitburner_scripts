@@ -3,8 +3,8 @@ export async function main(ns) {
     ns.disableLog('ALL');
 
     // constants
-    const maxExpenditureRatio = 0.05
-    const interval = 1000
+    const maxExpenditureRatio = 0.005
+    const interval = 250
 
     while (true) {
         // get player info
@@ -14,7 +14,20 @@ export async function main(ns) {
         var numNodes = ns.hacknet.numNodes();
         var maxNodes = ns.hacknet.maxNumNodes() == numNodes;
         var purchaseNodeCost = ns.hacknet.getPurchaseNodeCost();
-        
+
+        if (!numNodes) {
+            // there are no nodes - buy one
+            let result = ns.hacknet.purchaseNode();
+            if (result >= 0) {
+                out_str = `New hacknet node! Spent ${ns.nFormat(purchaseNodeCost, '0.00a')}.`
+                ns.toast(out_str, 'info');
+            } else {
+                out_str = `Failed to buy hacknet node for ${ns.nFormat(purchaseNodeCost, '0.00a')}.`
+                ns.toast(out_str, 'warning');
+            }
+            ns.print(out_str)
+        }
+
         // get nodes
         var nodes = []
         for (let i = 0; i < numNodes; i++) {
@@ -52,7 +65,7 @@ export async function main(ns) {
                 upgradeMap.identifiedNode = node.index;
             }
 
-            if (node.ramUpgradeCost < lowestCostSeen) {
+            if (node.coreUpgradeCost < lowestCostSeen) {
                 lowestCostSeen = node.coreUpgradeCost;
                 upgradeMap.ram = false;
                 upgradeMap.core = true;
@@ -92,30 +105,30 @@ export async function main(ns) {
             if (upgradeMap.ram) {
                 let result = ns.hacknet.upgradeRam(upgradeMap.identifiedNode, 1);
                 if (result) {
-                    out_str = `Upgraded RAM for hacknet-node-${upgradeMap.identifiedNode}! Spent ${ns.nFormat(lowestCostSeen, '0.00a')}.`
+                    out_str = `Upgraded RAM for hacknet-node-${upgradeMap.identifiedNode}! Spent \$${ns.nFormat(lowestCostSeen, '0.00a')}.`
                     ns.toast(out_str, 'info');
                 } else {
-                    out_str = `Failed to upgrade RAM for hacknet-node-${upgradeMap.identifiedNode} for ${ns.nFormat(lowestCostSeen, '0.00a')}.`
+                    out_str = `Failed to upgrade RAM for hacknet-node-${upgradeMap.identifiedNode} for \$${ns.nFormat(lowestCostSeen, '0.00a')}.`
                     ns.toast(out_str, 'warning');
                 }
                 ns.print(out_str)
             } else if (upgradeMap.core) {
                 let result = ns.hacknet.upgradeCore(upgradeMap.identifiedNode, 1);
                 if (result) {
-                    out_str = `Upgraded core for hacknet-node-${upgradeMap.identifiedNode}! Spent ${ns.nFormat(lowestCostSeen, '0.00a')}.`
+                    out_str = `Upgraded core for hacknet-node-${upgradeMap.identifiedNode}! Spent \$${ns.nFormat(lowestCostSeen, '0.00a')}.`
                     ns.toast(out_str, 'info');
                 } else {
-                    out_str = `Failed to upgrade core for hacknet-node-${upgradeMap.identifiedNode} for ${ns.nFormat(lowestCostSeen, '0.00a')}.`
+                    out_str = `Failed to upgrade core for hacknet-node-${upgradeMap.identifiedNode} for \$${ns.nFormat(lowestCostSeen, '0.00a')}.`
                     ns.toast(out_str, 'warning');
                 }
                 ns.print(out_str)
             } else if (upgradeMap.level) {
                 let result = ns.hacknet.upgradeLevel(upgradeMap.identifiedNode, 1);
                 if (result) {
-                    out_str = `Upgraded level for hacknet-node-${upgradeMap.identifiedNode}! Spent ${ns.nFormat(lowestCostSeen, '0.00a')}.`
+                    out_str = `Upgraded level for hacknet-node-${upgradeMap.identifiedNode}! Spent \$${ns.nFormat(lowestCostSeen, '0.00a')}.`
                     ns.toast(out_str, 'info');
                 } else {
-                    out_str = `Failed to upgrade level for hacknet-node-${upgradeMap.identifiedNode} for ${ns.nFormat(lowestCostSeen, '0.00a')}.`
+                    out_str = `Failed to upgrade level for hacknet-node-${upgradeMap.identifiedNode} for \$${ns.nFormat(lowestCostSeen, '0.00a')}.`
                     ns.toast(out_str, 'warning');
                 }
                 ns.print(out_str)
