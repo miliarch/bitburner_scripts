@@ -6,7 +6,6 @@ export async function main(ns) {
         'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/early/get_info.js',
         'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/early/lib.js',
         'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/early/remote_root.js',
-        'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/early/scan_deploy_workers.js',
         'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/early/scan_get_info.js',
         'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/early/worker.js',
         'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/early/worker_grower.js',
