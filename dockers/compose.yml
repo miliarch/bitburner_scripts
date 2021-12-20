@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  web:
+    image: bitburner_scripts_web:latest
+    build:
+      context: .
+      dockerfile: ./dockers/nginx/Dockerfile
+    ports:
+      - 3000:80
+    volumes:
+      - ./:/usr/share/nginx/html
