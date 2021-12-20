@@ -196,9 +196,14 @@ export function hostReport(ns, target, moneyModifier=0.75, growthModifier=1.25, 
     return report;
 }
 
-export function placeWorker(ns, host, target, threads) {
+export function placeWorker(ns, host, target, threads, port=0) {
     // deploy script on host toward target
-    let args = generateUniqueProcessArgs(ns, [target.hostname, 0], host.processes);
+    var args = []
+    if (port > 0) {
+        args = generateUniqueProcessArgs(ns, [target.hostname, 0, port], host.processes);
+    } else {
+        args = generateUniqueProcessArgs(ns, [target.hostname, 0], host.processes);
+    }
     let success = ns.exec(target.script, host.hostname, threads, ...args);
     var out_str = ''
     if (success) {
@@ -212,7 +217,7 @@ export function placeWorker(ns, host, target, threads) {
     return success
 }
 
-export async function evaluateAndPlace(ns, host, target) {
+export async function evaluateAndPlace(ns, host, target, port=0) {
     let needsPlacement = target.remainingThreads > 0;
     let hostHasCapacity = host.freeRam >= target.scriptCost;
     if (needsPlacement && hostHasCapacity) {
@@ -220,7 +225,12 @@ export async function evaluateAndPlace(ns, host, target) {
         let availableThreads = calcAvailableThreads(host.freeRam, target.scriptCost);
         let placedThreads = (availableThreads > target.remainingThreads) ? target.remainingThreads : availableThreads;
         await checkCopyScript(ns, host, target);
-        let success = await placeWorker(ns, host, target, placedThreads);
+        var success = false;
+        if (port > 0) {
+            success = await placeWorker(ns, host, target, placedThreads, port);
+        } else {
+            success = await placeWorker(ns, host, target, placedThreads);
+        }
         if (success) {
             return placedThreads;
         }

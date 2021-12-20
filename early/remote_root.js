@@ -7,7 +7,7 @@ export async function main(ns) {
     var target = ns.args[0];
     var portOpeners = playerPortOpeners(ns);
     var portsRequired = ns.getServerNumPortsRequired(target);
-    out_str = ''
+    var out_str = ''
     if (ns.hasRootAccess(target) == false) {
         if (portOpeners.length >= portsRequired) {
             for (var i in portOpeners) {

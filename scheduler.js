@@ -5,25 +5,41 @@ export async function main(ns) {
     // arguments
     const scan_target = ns.args[0] ? ns.args[0] : 'home';
     const depth = ns.args[1] ? ns.args[1] : 1;
+    // controls whether workers will be started in reporting mode; value should match the netscript port they'll publish to
+    const reportPort = ns.args[2] ? ns.args[2] : 0;
 
     // program constants
     const moneyThresholdMultiplier = 0.75;
     const moneyMaxHackAmountMultiplier = 1 - moneyThresholdMultiplier;
-    const growthMultiplier = 1.25;
+    const growthMultiplier = 2;
     const securityModifier = 5;
     const hackScript = 'worker_hack.js';
     const growScript = 'worker_grow.js';
     const weakenScript = 'worker_weaken.js';
-    const maxHackThreads = 30;
-    const maxWeakenThreads = 200;
-    const maxGrowthThreads = 200;
     const maxHackThreadRatio = 0.15;
     const maxWeakenThreadRatio = 0.5;
     const maxGrowThreadRatio = 0.35;
     const homeReservedRam = 30;
+    const currentHost = ns.getServer();
+    const reporterScript = 'hack_report.js';
 
     // program loop
     while (true) {
+        // ensure reporter is live if enabled
+        var reporterLive = false;
+        if (reportPort > 0) {
+            let hostProcesses = ns.ps(currentHost.hostname);
+            for (let p of hostProcesses) {
+                if (p.filename == reporterScript) {
+                    // reporter is live
+                    reporterLive = true;
+                } else {
+                    // reporter is AWOL; run reporter
+                    ns.run(reporterScript, 1, reportPort)
+                }
+            }
+        }
+
         // scan and save unique target hostnames to target depth
         var hosts = lib.findHostsRecursive(ns, scan_target, depth);
 
@@ -51,15 +67,11 @@ export async function main(ns) {
             server.freeRam = (server.hostname == 'home') ? lib.freeRam(server) - homeReservedRam : lib.freeRam(server);
             server.moneyThreshold = server.moneyMax * moneyThresholdMultiplier;
             server.securityThreshold = server.minDifficulty + securityModifier;
+            server.securityDifference = server.hackDifficulty - server.securityThreshold;
             server.idealHackThreads = lib.estimateHackThreads(ns, server.hostname, server.moneyAvailable * moneyMaxHackAmountMultiplier);
-            //server.idealHackThreads = (server.idealHackThreads > maxHackThreads) ? maxHackThreads : server.idealHackThreads;
-            server.maxHackThreads = maxHackThreads;
             server.actualHackAmount = (ns.hackAnalyze(server.hostname) * server.moneyAvailable) * server.idealHackThreads;
             server.potentialHackAmount = (ns.hackAnalyze(server.hostname) * server.moneyMax) * server.idealHackThreads;
             server.idealGrowthThreads = lib.getIdealGrowthThreads(ns, server.cpuCores, server.hostname, growthMultiplier);
-            server.maxGrowthThreads = maxGrowthThreads;
-            server.idealWeakenThreads = maxWeakenThreads;  // sucks, but I need to figure out how to calculate this
-            server.maxWeakenThreads = maxWeakenThreads;
             server.idealThreadRatio = server.idealHackThreads / server.idealGrowthThreads;
             server.idealAmountRatio = server.actualHackAmount / server.potentialHackAmount;
 
@@ -80,12 +92,11 @@ export async function main(ns) {
                         server.scriptCost = hackScriptCost;
                         server.script = hackScript
                         hackTargets.push(server);
-                    } else if (server.hackDifficulty > server.securityThreshold) {
+                    } else if (server.securityDifference > 0) {
                         // Server needs to be weakened before hack or grow can happen
                         server.remainingThreads = server.idealWeakenThreads;
                         server.scriptCost = weakenScriptCost;
                         server.script = weakenScript
-                        server.securityDiff = server.hackDifficulty - server.securityThreshold;
                         weakenTargets.push(server);
                     } else {
                         // Server needs to be grown before hack or weaken can happen
@@ -108,24 +119,77 @@ export async function main(ns) {
         // sort growTargets by (server.idealThreadRatio / server.idealAmountRatio) to approximate priority of resource expenditure
         growTargets = growTargets.sort((a, b) => (a.idealThreadRatio / a.idealAmountRatio > b.idealThreadRatio / b.idealAmountRatio) ? -1 : 1);
 
-        // identify total resource capacity
-        var totalFreeRam = 0
-        for (host of scriptHosts) {
-            totalFreeRam += host.freeRam;
+        // running thread identification
+        // e.g.: {"filename":"worker_weaken.js","threads":3,"args":["the-hub",12],"pid":470}
+        var hackProcesses = [];
+        var weakenProcesses = [];
+        var growProcesses = [];
+        for (var host of scriptHosts) {
+            // push [threads, target.hostname] to appropriate array
+            for (let p of host.processes) {
+                if (p.filename == hackScript) {
+                    hackProcesses.push([p.threads, p.args[0]]);
+                } else if (p.filename == weakenScript) {
+                    weakenProcesses.push([p.threads, p.args[0]]);
+                } else if (p.filename == growScript) {
+                    growProcesses.push([p.threads, p.args[0]]);
+                }
+            }
         }
 
-        var hackRam = totalFreeRam * maxHackThreadRatio;
-        var weakenRam = totalFreeRam * maxWeakenThreadRatio;
-        var growRam = totalFreeRam * maxGrowThreadRatio;
+        // identify total resource capacity
+        var totalFreeRam = 0
+        var totalRam = 0
+        for (host of scriptHosts) {
+            totalFreeRam += host.freeRam;
+            totalRam += host.maxRam;
+        }
+
+        // set used ram amounts
+        var usedHackRam = 0
+        var usedWeakenRam = 0
+        var usedGrowRam = 0
+        for (let p of hackProcesses) {
+            usedHackRam += p[0] * hackScriptCost
+        }
+        for (let p of weakenProcesses) {
+            usedWeakenRam += p[0] * weakenScriptCost
+        }
+        for (let p of growProcesses) {
+            usedGrowRam += p[0] * growScriptCost
+        }
+
+        // set ideal limits
+        var idealHackRam = totalRam * maxHackThreadRatio;
+        var idealWeakenRam = totalRam * maxWeakenThreadRatio;
+        var idealGrowRam = totalRam * maxGrowThreadRatio;
+
+        // set actual limits
+        var hackRam = (usedHackRam >= idealHackRam) ? 0 : totalFreeRam * maxHackThreadRatio;
+        var weakenRam = (usedWeakenRam >= idealWeakenRam) ? 0 : totalFreeRam * maxWeakenThreadRatio;
+        var growRam = (usedGrowRam >= idealGrowRam) ? 0 : totalFreeRam * maxGrowThreadRatio;
 
         // placement logic
 
         // hack scripts
         for (var target of hackTargets) {
+            // deduct running threads from remainingThreads counter
+            for (let p of hackProcesses) {
+                if (target.hostname == p[1]) {
+                    target.remainingThreads -= p[0];
+                }
+            }
             for (var host of scriptHosts) {
                 // placement, finally
+                //if (hackRam > hackScriptCost && totalFreeRam > hackScriptCost && target.remainingThreads) {
                 if (totalFreeRam > hackScriptCost && target.remainingThreads) {
-                    let placedThreads = await lib.evaluateAndPlace(ns, host, target);
+                    // always hack if there is demand, don't mind the hack reservation
+                    var placedThreads = 0;
+                    if (reportPort > 0) {
+                        placedThreads = await lib.evaluateAndPlace(ns, host, target, reportPort);
+                    } else {
+                        placedThreads = await lib.evaluateAndPlace(ns, host, target);
+                    }
                     if (placedThreads) {
                         // decrement counters
                         host.freeRam -= hackScriptCost * placedThreads;
@@ -142,18 +206,30 @@ export async function main(ns) {
                 // weaken impact only considers the running host - do some math and update counters
                 var threads = 1;
                 var weakenAmount = 0;
-                while (weakenAmount < target.securityDiff) {
+                while (weakenAmount < target.securityDifference) {
                     weakenAmount = ns.weakenAnalyze(threads, host.cpuCores);
-                    threads += 1
+                    threads += 1;
                 }
-                target.remainingThreads = threads
+                target.remainingThreads = threads;
+
+                // deduct running threads from  remainingThreads counter (can't be top level, host is important in threads)
+                for (let p of weakenProcesses) {
+                    if (target.hostname == p[1]) {
+                        target.remainingThreads -= p[0];
+                    }
+                }
 
                 // placement, finally
-                if (totalFreeRam > weakenScriptCost && target.remainingThreads) {
-                    let placedThreads = await lib.evaluateAndPlace(ns, host, target);
+                if (totalFreeRam > idealHackRam && totalFreeRam > weakenScriptCost && target.remainingThreads) {
+                    var placedThreads = 0;
+                    if (reportPort > 0) {
+                        placedThreads = await lib.evaluateAndPlace(ns, host, target, reportPort);
+                    } else {
+                        placedThreads = await lib.evaluateAndPlace(ns, host, target);
+                    }
                     if (placedThreads) {
                         // decrement counters
-                        target.securityDiff -= ns.weakenAnalyze(placedThreads, host.cpuCores);
+                        target.securityDifference -= ns.weakenAnalyze(placedThreads, host.cpuCores);
                         host.freeRam -= weakenScriptCost * placedThreads;
                         weakenRam -= weakenScriptCost * placedThreads;
                     }
@@ -163,10 +239,21 @@ export async function main(ns) {
 
         // grow scripts
         for (var target of growTargets) {
+            // deduct running threads from remainingThreads counter
+            for (let p of growProcesses) {
+                if (target.hostname == p[1]) {
+                    target.remainingThreads -= p[0];
+                }
+            }
             for (var host of scriptHosts) {
                 // placement, finally
-                if (totalFreeRam > growScriptCost && target.remainingThreads) {
-                    let placedThreads = await lib.evaluateAndPlace(ns, host, target);
+                if (totalFreeRam > idealHackRam && totalFreeRam > growScriptCost && target.remainingThreads) {
+                    var placedThreads = 0;
+                    if (reportPort > 0) {
+                        placedThreads = await lib.evaluateAndPlace(ns, host, target, reportPort);
+                    } else {
+                        placedThreads = await lib.evaluateAndPlace(ns, host, target);
+                    }
                     if (placedThreads) {
                         // decrement counters
                         host.freeRam -= growScriptCost * placedThreads;

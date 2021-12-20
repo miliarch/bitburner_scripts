@@ -9,6 +9,7 @@ export async function main(ns) {
         'http://localhost:3000/fetch_dev_scripts.js',
         'http://localhost:3000/hacknet_minder.js',
         'http://localhost:3000/early/remote_root.js',
+        'http://localhost:3000/hack_report.js',
     ]
     for (let url of urls) {
         let filename = url.substring(url.lastIndexOf('/') + 1);
