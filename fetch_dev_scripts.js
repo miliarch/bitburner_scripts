@@ -15,6 +15,7 @@ export async function main(ns) {
         'http://localhost:3000/early/worker_grow.js',
         'http://localhost:3000/early/worker_hack.js',
         'http://localhost:3000/early/worker_weaken.js',
+        'http://localhost:3000/buy_server.js',
     ]
     for (let url of urls) {
         let filename = url.substring(url.lastIndexOf('/') + 1);
