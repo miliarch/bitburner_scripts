@@ -263,3 +263,53 @@ export async function checkCopyScript(ns, host, target) {
     ns.print(out_str);
     }
 }
+
+export function presentPurchaseServerOptions(ns) {
+    var costPerGB = ns.getPurchasedServerCost(1);
+    var out_str = ''
+    out_str += `Server cost is \$${ns.nFormat(costPerGB, '0.00a')} per GB`;
+    out_str += `Options:\n`
+    for (let i = 1; i <= 20 ; i++) {
+        let ram = Math.pow(2, i);
+        let cost = ns.getPurchasedServerCost(ram);
+        out_str += `${formatPurchaseServerOption(ns, i, ram, cost)}`;
+        if (i != 20) {
+            out_str += `\n`;
+        }
+    }
+    return out_str
+}
+
+export function purchaseServer(ns, hostname, ram) {
+    // Purchase server of given size and name
+    const canPurchase = ns.getPurchasedServerLimit() > ns.getPurchasedServers().length
+    var out_str = ''
+    if (canPurchase) {
+        let server = ns.purchaseServer(hostname, ram);
+        if (server) {
+            out_str += `Successfully purchased ${ns.nFormat(ram * Math.pow(1024, 3), '0.00 ib')} `
+            out_str += `server ${server} for \$${ns.nFormat(ns.getPurchasedServerCost(ram), '0.00a')}`
+            ns.toast(out_str, 'success');
+        } else {
+            out_str += `Could not purchase server for some reason - check your arguments: (${args})`
+            ns.toast(out_str, 'error');
+        }
+    } else {
+        // give the player the bad news
+        out_str += `Could not purchase server - max servers owned, delete some to buy more`;
+        ns.toast(out_str, 'error');
+    }
+    ns.print(out_str);
+    return out_str
+}
+
+export function formatPurchaseServerOption(ns, option, ram, cost) {
+    var out_str = ''
+    if (option < 10) {
+        out_str += ` ${option}: `
+    } else {
+        out_str += `${option}: `
+    }
+    out_str += `\t${ns.nFormat(ram * Math.pow(1024, 3), '0 ib')}   \t\$${ns.nFormat(cost, '0.00a')}`;
+    return out_str
+}
