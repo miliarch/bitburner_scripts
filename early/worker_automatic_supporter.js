@@ -1,5 +1,5 @@
 /** @param {NS} ns **/
-// Worker script; deploy on target and automatically run hack, grow, and weaken serially
+// Worker script; deploy on target and automatically run grow and weaken serially
 export async function main(ns) {
     const target = ns.args[0];
     const moneyMultiplier = ns.args[1] ? ns.args[1] : 0.75;
