@@ -109,7 +109,7 @@ export async function main(ns) {
             }
         }
 
-        // sort target lists by priority (note - weaken currently ignored)
+        // sort target lists by priority
         // sort hackTargets by server.actualHackAmount descending - more valuable targets first
         hackTargets = hackTargets.sort((a, b) => (a.actualHackAmount > b.actualHackAmount) ? -1 : 1);
 
@@ -173,6 +173,9 @@ export async function main(ns) {
 
         // hack scripts
         for (var target of hackTargets) {
+            // sort scriptHosts list by RAM available (prevent thread splitting as much as possible);
+            scriptHosts = scriptHosts.sort((a, b) => (a.freeRam > b.freeRam) ? -1 : 1);
+
             // deduct running threads from remainingThreads counter
             for (let p of hackProcesses) {
                 if (target.hostname == p[1]) {
@@ -180,6 +183,7 @@ export async function main(ns) {
                 }
             }
             for (var host of scriptHosts) {
+
                 // placement, finally
                 //if (hackRam > hackScriptCost && totalFreeRam > hackScriptCost && target.remainingThreads) {
                 if (totalFreeRam > hackScriptCost && target.remainingThreads) {
@@ -202,9 +206,12 @@ export async function main(ns) {
 
         // weaken scripts
         for (var target of weakenTargets) {
+            // sort scriptHosts list by RAM available (prevent thread splitting as much as possible);
+            scriptHosts = scriptHosts.sort((a, b) => (a.freeRam > b.freeRam) ? -1 : 1);
+
             for (var host of scriptHosts) {
                 // weaken impact only considers the running host - do some math and update counters
-                var threads = 1;
+                var threads = 0;
                 var weakenAmount = 0;
                 while (weakenAmount < target.securityDifference) {
                     weakenAmount = ns.weakenAnalyze(threads, host.cpuCores);
@@ -239,6 +246,9 @@ export async function main(ns) {
 
         // grow scripts
         for (var target of growTargets) {
+            // sort scriptHosts list by RAM available (prevent thread splitting as much as possible);
+            scriptHosts = scriptHosts.sort((a, b) => (a.freeRam > b.freeRam) ? -1 : 1);
+
             // deduct running threads from remainingThreads counter
             for (let p of growProcesses) {
                 if (target.hostname == p[1]) {
