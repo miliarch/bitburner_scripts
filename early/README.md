@@ -2,7 +2,7 @@
 
 At the very start of the game, when you're strapped for RAM and money (which prevents you from obtaining more RAM), you will need to make all the workload placement decisions and deployments (copying `worker_automatic*.js` files to servers and running them as needed). Later on, as you obtain more RAM, you'll be able to run deployment and scanning scripts from your home computer or purchased server, making workload management much faster and easier.
 
-Each script in this section contains some amount of commentary about what the code is doing when logic isn't obvious, and almost all depend on each other to successfully execute (scanning, deployment, and informational scripts). Start with workers, move on to deployment, then scanning, and make sure all dependent scripts are available. You'll be fine.
+Each script in this section (along with `lib.js` in the root of the repository) contains some amount of commentary about what the code is doing when logic isn't obvious, and almost all depend on each other to successfully execute (scanning, deployment, and informational scripts). Start with workers, move on to deployment, then scanning, and make sure all dependent scripts are available. You'll be fine.
 
 You can fetch all scripts with [early_fetch_all.js](early_fetch_all.js):
 ```
