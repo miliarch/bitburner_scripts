@@ -111,3 +111,11 @@ Depth 5 from `home`:
 ```
 run scan_get_info.js home 5
 ```
+
+### Automatically purchase Hacknet nodes and upgrades
+
+The algorithm isn't perfect - there are more efficient patterns - the important part is that you don't have to mind the hacknet manually.
+
+```
+run hacknet_minder.js
+```
