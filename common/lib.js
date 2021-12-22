@@ -317,13 +317,13 @@ export function outputMessage(ns, result, expected, prepend, operation, extra) {
         if (extra && extra.hasOwnProperty('success')) {
             out_str += ` (${extra['success']})`;
         }
-        toastPrint(ns, out_str, messaging['success']['type'], messaging['success']['print'], messaging['tprint'])
+        toastPrint(ns, out_str, messaging['success']['type'], messaging['success']['print'], messaging['success']['tprint'])
     } else {
         out_str += `${messaging['fail']['value']}`
         if (extra && extra.hasOwnProperty('fail')) {
             out_str += ` (${extra['fail']})`;
         }
-        toastPrint(ns, out_str, messaging['fail']['type'], messaging['fail']['print'], messaging['tprint'])
+        toastPrint(ns, out_str, messaging['fail']['type'], messaging['fail']['print'], messaging['fail']['tprint'])
     }
     return out_str
 }
