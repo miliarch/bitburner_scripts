@@ -1,0 +1,44 @@
+{
+  "delete_server": {
+    "fail": {
+      "print": true,
+      "tprint": true,
+      "type": "error",
+      "value": "could not delete server"
+    },
+    "success": {
+      "print": true,
+      "tprint": false,
+      "type": "success",
+      "value": "deleted server"
+    }
+  },
+  "kill_all_processes_on_target": {
+    "fail": {
+      "print": true,
+      "tprint": false,
+      "type": "info",
+      "value": "no processes to kill"
+    },
+    "success": {
+      "print": true,
+      "tprint": false,
+      "type": "success",
+      "value": "killed all processes"
+    }
+  },
+  "purchase_server": {
+    "fail": {
+      "print": true,
+      "tprint": true,
+      "type": "error",
+      "value": "could not purchase server"
+    },
+    "success": {
+      "print": true,
+      "tprint": false,
+      "type": "success",
+      "value": "purchased server"
+    }
+  }
+}

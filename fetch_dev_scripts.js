@@ -2,8 +2,10 @@
 export async function main(ns) {
     let urls = [
         'http://localhost:3000/fetch_dev_scripts.js',
-        'http://localhost:3000/lib.js',
+        'http://localhost:3000/common/lib.js',
+        'http://localhost:3000/common/operation_strings.txt',
         'http://localhost:3000/early/buy_server.js',
+        'http://localhost:3000/early/delete_server.js',
         'http://localhost:3000/early/deploy_worker.js',
         'http://localhost:3000/early/get_info.js',
         'http://localhost:3000/early/hack_report.js',

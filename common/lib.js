@@ -267,7 +267,7 @@ export async function checkCopyScript(ns, host, target) {
 export function presentPurchaseServerOptions(ns) {
     var costPerGB = ns.getPurchasedServerCost(1);
     var out_str = ''
-    out_str += `Server cost is \$${ns.nFormat(costPerGB, '0.00a')} per GB`;
+    out_str += `Server cost is \$${ns.nFormat(costPerGB, '0.00a')} per GB\n`;
     out_str += `Options:\n`
     for (let i = 1; i <= 20 ; i++) {
         let ram = Math.pow(2, i);
@@ -280,31 +280,109 @@ export function presentPurchaseServerOptions(ns) {
     return out_str
 }
 
-export function purchaseServer(ns, hostname, ram) {
-    // Purchase server of given size and name
-    const canPurchase = ns.getPurchasedServerLimit() > ns.getPurchasedServers().length
-    var out_str = ''
-    if (canPurchase) {
-        let server = ns.purchaseServer(hostname, ram);
-        if (server) {
-            out_str += `Successfully purchased ${ns.nFormat(ram * Math.pow(1024, 3), '0.00 ib')} `
-            out_str += `server ${server} for \$${ns.nFormat(ns.getPurchasedServerCost(ram), '0.00a')}`
-            ns.toast(out_str, 'success');
-        } else {
-            out_str += `Could not purchase server for some reason - check your arguments: (${args})`
-            ns.toast(out_str, 'error');
-        }
-    } else {
-        // give the player the bad news
-        out_str += `Could not purchase server - max servers owned, delete some to buy more`;
-        ns.toast(out_str, 'error');
+export function toastPrint(ns, out_str, variant, print=true, tprint=false) {
+    ns.toast(out_str, variant)
+    if (print) {
+        ns.print(`${variant}: ${out_str}`)
     }
-    ns.print(out_str);
+    if (tprint) {
+        ns.tprint(`${variant}: ${out_str}`)
+    }
+}
+
+export function importJSON(ns, filename) {
+    let fileExists = ns.fileExists(filename, 'home')
+    var failString = `Failed to import JSON from ${filename}: `
+    if (fileExists) {
+        let data = JSON.parse(ns.read(filename));
+        if (data) {
+            return data;
+            toastPrint(ns, `Imported JSON from ${filename}`, 'success');
+        } else {
+            toastPrint(ns, `${failString}: parse result null`, 'error', true, true)
+            return false;
+        }
+        return data;
+    } else {
+        toastPrint(ns, `${failString}: file does not exist`, 'error', true, true);
+        return false;
+    }
+}
+
+export function outputMessage(ns, result, expected, prepend, operation, extra) {
+    let messaging = importJSON(ns, 'operation_strings.txt')[operation]
+    var out_str = `${prepend}: `
+    if (result == expected) {
+        out_str += `${messaging['success']['value']}`
+        if (extra && extra.hasOwnProperty('success')) {
+            out_str += ` (${extra['success']})`;
+        }
+        toastPrint(ns, out_str, messaging['success']['type'], messaging['success']['print'], messaging['tprint'])
+    } else {
+        out_str += `${messaging['fail']['value']}`
+        if (extra && extra.hasOwnProperty('fail')) {
+            out_str += ` (${extra['fail']})`;
+        }
+        toastPrint(ns, out_str, messaging['fail']['type'], messaging['fail']['print'], messaging['tprint'])
+    }
     return out_str
 }
 
+export function killAllProcessesOnTarget(ns, hostname) {
+    // Kill all processes on target system
+    const operation = 'kill_all_processes_on_target';
+    var result;
+    var extra = {}
+    if (ns.serverExists(hostname)) {
+        extra['success'] = hostname;
+        extra['fail'] = hostname;
+        result = outputMessage(ns, ns.killall(hostname), true, operation, operation, extra);
+    } else {
+        extra['fail'] = `${hostname} does not exist`
+        result = outputMessage(ns, false, true, operation, operation, extra);
+    }
+    return result;
+}
+
+export function deleteServer(ns, hostname) {
+    const operation = 'delete_server';
+    var result;
+    var extra = {}
+    if (ns.serverExists(hostname)) {
+        extra['success'] = hostname;
+        extra['fail'] = hostname
+        result = outputMessage(ns, ns.deleteServer(hostname), true, operation, operation, extra);
+    } else {
+        extra['fail'] = `${hostname} does not exist`;
+        result = outputMessage(ns, hostname, false, operation, operation, extra);
+    }
+    return result;
+}
+
+export function purchaseServer(ns, hostname, ram) {
+    // Purchase server of given size and name
+    const operation = 'purchase_server';
+    let size = ns.nFormat(ram * Math.pow(1024, 3), '0.00 ib');
+    let cost = `\$${ns.nFormat(ns.getPurchasedServerCost(ram), '0.00a')}`;
+    var extra = {};
+    const canPurchase = ns.getPurchasedServerLimit() > ns.getPurchasedServers().length;
+    var result;
+    if (canPurchase) {
+        var server = ns.purchaseServer(hostname, ram);
+        var match = (server.includes(hostname)) ? server : false;
+        extra['fail'] = 'check arguments'
+        extra['success'] = `${match}: ${size} / ${cost}`
+        result = outputMessage(ns, match, server, operation, operation, extra);
+    } else {
+        // give the player the bad news
+        extra['fail'] = 'max servers, delete some to buy more';
+        result = outputMessage(ns, false, true, hostname, operation, extra);
+    }
+    return result;
+}
+
 export function formatPurchaseServerOption(ns, option, ram, cost) {
-    var out_str = ''
+    var out_str = '\t'
     if (option < 10) {
         out_str += ` ${option}: `
     } else {
