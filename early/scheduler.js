@@ -22,6 +22,9 @@ export async function main(ns) {
     const homeReservedRam = 30;
     const currentHost = ns.getServer();
     const reporterScript = 'hack_report.js';
+    const reporterFile = 'hack_report.txt'
+    const acceptableHackFailRatio = 0.75;
+    const failedHackIgnoreCount = 100;
 
     // program loop
     while (true) {
@@ -108,10 +111,31 @@ export async function main(ns) {
                 }
             }
         }
-
         // sort target lists by priority
         // sort hackTargets by server.actualHackAmount descending - more valuable targets first
         hackTargets = hackTargets.sort((a, b) => (a.actualHackAmount > b.actualHackAmount) ? -1 : 1);
+
+        // import hack stats if existing
+        var hackStats = ns.fileExists(reporterFile) ? lib.importJSON(ns, reporterFile) : null;
+        if (hackStats && hackTargets.length > 0) {
+            // remove hackTargets that are impossible
+            for (var i = hackTargets.length - 1; i >= 0; i--) {
+                var target = hackTargets[i];
+                if (hackStats.hasOwnProperty(target.hostname) && hackStats[target.hostname].hasOwnProperty('hack')) {
+                    let totalCount = hackStats[target.hostname]['hack']['count'];
+                    let successCount = hackStats[target.hostname]['hack']['success_count'];
+                    let failCount = hackStats[target.hostname]['hack']['fail_count'];
+                    let candidate = (totalCount > failedHackIgnoreCount);
+                    let exclude = (candidate && failCount >= totalCount * acceptableHackFailRatio);
+                    if (exclude) {
+                        // fulcrumassets, I'm looking at you
+                        hackTargets.splice(i, 1);
+                    }
+                }
+            }
+        }
+
+
 
         // sort weakenTargets by (server.idealThreadRatio / server.idealAmountRatio) to approximate priority of resource expenditure
         weakenTargets = weakenTargets.sort((a, b) => (a.idealThreadRatio / a.idealAmountRatio > b.idealThreadRatio / b.idealAmountRatio) ? -1 : 1);
