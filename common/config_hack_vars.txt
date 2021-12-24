@@ -1,0 +1,17 @@
+{
+    "money_threshold_multiplier": 0.75,
+    "growth_multiplier": 2,
+    "security_modifier": 5,
+    "hack_script": "worker_hack.js",
+    "grow_script": "worker_grow.js",
+    "weaken_script": "worker_weaken.js",
+    "max_hack_thread_ratio": 0.15,
+    "max_grow_thread_ratio": 0.5,
+    "max_weaken_thread_ratio": 0.35,
+    "home_reserved_ram": 30,
+    "reporter_script": "hack_report.js",
+    "reporter_file": "hack_report.txt",
+    "acceptable_hack_fail_ratio": 0.75,
+    "failed_hack_ignore_threshold": 100,
+    "hack_reporter_port": 1
+}

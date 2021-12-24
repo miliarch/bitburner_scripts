@@ -5,41 +5,63 @@ export async function main(ns) {
     // arguments
     const scan_target = ns.args[0] ? ns.args[0] : 'home';
     const depth = ns.args[1] ? ns.args[1] : 1;
+
     // controls whether workers will be started in reporting mode; value should match the netscript port they'll publish to
-    const reportPort = ns.args[2] ? ns.args[2] : 0;
+    var reportPort = ns.args[2] ? ns.args[2] : 0;
+
 
     // program constants
-    const moneyThresholdMultiplier = 0.75;
-    const moneyMaxHackAmountMultiplier = 1 - moneyThresholdMultiplier;
-    const growthMultiplier = 2;
-    const securityModifier = 5;
-    const hackScript = 'worker_hack.js';
-    const growScript = 'worker_grow.js';
-    const weakenScript = 'worker_weaken.js';
-    const maxHackThreadRatio = 0.15;
-    const maxWeakenThreadRatio = 0.5;
-    const maxGrowThreadRatio = 0.35;
-    const homeReservedRam = 30;
     const currentHost = ns.getServer();
-    const reporterScript = 'hack_report.js';
-    const reporterFile = 'hack_report.txt'
-    const acceptableHackFailRatio = 0.75;
-    const failedHackIgnoreCount = 100;
+    const configFile = 'config_hack_vars.txt';
+    const loopInterval = 1000;
+    const configUpdateInterval = 60;
 
     // program loop
+    var config;
+    var configUpdateCounter = 0;
     while (true) {
+        configUpdateCounter -= 1;
+        if (configUpdateCounter <= 0) {
+            // import configuration
+            config = lib.importJSON(ns, configFile);
+            ns.print('imported config:\n', config);
+            configUpdateCounter = configUpdateInterval;
+        }
+
+        // config mapping to loop constants
+        const moneyThresholdMultiplier = config['money_threshold_multiplier'];
+        const moneyMaxHackAmountMultiplier = 1 - moneyThresholdMultiplier;
+        const growthMultiplier = config['growth_multiplier'];
+        const securityModifier = config['security_modifier'];
+        const hackScript = config['hack_script'];
+        const growScript = config['grow_script'];
+        const weakenScript = config['weaken_script'];
+        const maxHackThreadRatio = config['max_hack_thread_ratio'];
+        const maxGrowThreadRatio = config['max_grow_thread_ratio'];
+        const maxWeakenThreadRatio = config['max_weaken_thread_ratio'];
+        const homeReservedRam = config['home_reserved_ram'];
+        const reporterScript = config['reporter_script'];
+        const reporterFile = config['reporter_file'];
+        const acceptableHackFailRatio = config['acceptable_hack_fail_ratio'];
+        const failedHackIgnoreThreshold = config['failed_hack_ignore_threshold'];
+        const hackReporterPort = (!reportPort) ? config['hack_reporter_port'] : reportPort;
+        const hackScriptCost = ns.getScriptRam(hackScript, 'home');
+        const growScriptCost = ns.getScriptRam(growScript, 'home');
+        const weakenScriptCost = ns.getScriptRam(weakenScript, 'home');
+
         // ensure reporter is live if enabled
-        var reporterLive = false;
-        if (reportPort > 0) {
+        if (hackReporterPort > 0) {
             let hostProcesses = ns.ps(currentHost.hostname);
+            var reporterLive = false;
             for (let p of hostProcesses) {
                 if (p.filename == reporterScript) {
                     // reporter is live
                     reporterLive = true;
-                } else {
-                    // reporter is AWOL; run reporter
-                    ns.run(reporterScript, 1, reportPort)
                 }
+            }
+            if (!reporterLive) {
+                // reporter is AWOL; run reporter
+                ns.run(reporterScript, 1, hackReporterPort)
             }
         }
 
@@ -49,12 +71,7 @@ export async function main(ns) {
         // Disable logging
         ns.disableLog('ALL');
 
-        // loop constants
-        const hackScriptCost = ns.getScriptRam(hackScript, 'home');
-        const growScriptCost = ns.getScriptRam(growScript, 'home');
-        const weakenScriptCost = ns.getScriptRam(weakenScript, 'home');
-
-        // bins
+        // server bins
         var scriptHosts = [];
         var hackTargets = [];
         var growTargets = [];
@@ -111,6 +128,7 @@ export async function main(ns) {
                 }
             }
         }
+
         // sort target lists by priority
         // sort hackTargets by server.actualHackAmount descending - more valuable targets first
         hackTargets = hackTargets.sort((a, b) => (a.actualHackAmount > b.actualHackAmount) ? -1 : 1);
@@ -125,7 +143,7 @@ export async function main(ns) {
                     let totalCount = hackStats[target.hostname]['hack']['count'];
                     let successCount = hackStats[target.hostname]['hack']['success_count'];
                     let failCount = hackStats[target.hostname]['hack']['fail_count'];
-                    let candidate = (totalCount > failedHackIgnoreCount);
+                    let candidate = (totalCount > failedHackIgnoreThreshold);
                     let exclude = (candidate && failCount >= totalCount * acceptableHackFailRatio);
                     if (exclude) {
                         // fulcrumassets, I'm looking at you
@@ -134,8 +152,6 @@ export async function main(ns) {
                 }
             }
         }
-
-
 
         // sort weakenTargets by (server.idealThreadRatio / server.idealAmountRatio) to approximate priority of resource expenditure
         weakenTargets = weakenTargets.sort((a, b) => (a.idealThreadRatio / a.idealAmountRatio > b.idealThreadRatio / b.idealAmountRatio) ? -1 : 1);
@@ -213,8 +229,8 @@ export async function main(ns) {
                 if (totalFreeRam > hackScriptCost && target.remainingThreads) {
                     // always hack if there is demand, don't mind the hack reservation
                     var placedThreads = 0;
-                    if (reportPort > 0) {
-                        placedThreads = await lib.evaluateAndPlace(ns, host, target, reportPort);
+                    if (hackReporterPort > 0) {
+                        placedThreads = await lib.evaluateAndPlace(ns, host, target, hackReporterPort);
                     } else {
                         placedThreads = await lib.evaluateAndPlace(ns, host, target);
                     }
@@ -253,8 +269,8 @@ export async function main(ns) {
                 // placement, finally
                 if (totalFreeRam > idealHackRam && totalFreeRam > weakenScriptCost && target.remainingThreads) {
                     var placedThreads = 0;
-                    if (reportPort > 0) {
-                        placedThreads = await lib.evaluateAndPlace(ns, host, target, reportPort);
+                    if (hackReporterPort > 0) {
+                        placedThreads = await lib.evaluateAndPlace(ns, host, target, hackReporterPort);
                     } else {
                         placedThreads = await lib.evaluateAndPlace(ns, host, target);
                     }
@@ -283,8 +299,8 @@ export async function main(ns) {
                 // placement, finally
                 if (totalFreeRam > idealHackRam && totalFreeRam > growScriptCost && target.remainingThreads) {
                     var placedThreads = 0;
-                    if (reportPort > 0) {
-                        placedThreads = await lib.evaluateAndPlace(ns, host, target, reportPort);
+                    if (hackReporterPort > 0) {
+                        placedThreads = await lib.evaluateAndPlace(ns, host, target, hackReporterPort);
                     } else {
                         placedThreads = await lib.evaluateAndPlace(ns, host, target);
                     }
@@ -298,6 +314,6 @@ export async function main(ns) {
             }
         }
 
-        await ns.sleep(1000);
+        await ns.sleep(loopInterval);
     }
 }
