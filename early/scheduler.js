@@ -44,7 +44,8 @@ export async function main(ns) {
         const reporterFile = config['reporter_file'];
         const acceptableHackFailRatio = config['acceptable_hack_fail_ratio'];
         const failedHackIgnoreThreshold = config['failed_hack_ignore_threshold'];
-        const hackReporterPort = (!reportPort) ? config['hack_reporter_port'] : reportPort;
+        const hackReporterPort = (reportPort == 0) ? config['hack_reporter_port'] : reportPort;
+        const focals = config['focals']; // list of servers to prioritize (e.g.: ["n00dles","iron_gym"])
         const hackScriptCost = ns.getScriptRam(hackScript, 'home');
         const growScriptCost = ns.getScriptRam(growScript, 'home');
         const weakenScriptCost = ns.getScriptRam(weakenScript, 'home');
@@ -73,6 +74,9 @@ export async function main(ns) {
 
         // server bins
         var scriptHosts = [];
+        var focalHackTargets = [];
+        var focalGrowTargets =[];
+        var focalWeakenTargets = [];
         var hackTargets = [];
         var growTargets = [];
         var weakenTargets = [];
@@ -110,20 +114,35 @@ export async function main(ns) {
                         // Server can be hacked immediately
                         server.remainingThreads = server.idealHackThreads;
                         server.scriptCost = hackScriptCost;
-                        server.script = hackScript
-                        hackTargets.push(server);
+                        server.script = hackScript;
+                        server.scriptType = 'hack';
+                        if (focals.includes(server.hostname)) {
+                            focalHackTargets.push(server);
+                        } else {
+                            hackTargets.push(server);
+                        }
                     } else if (server.securityDifference > 0) {
                         // Server needs to be weakened before hack or grow can happen
                         server.remainingThreads = server.idealWeakenThreads;
                         server.scriptCost = weakenScriptCost;
-                        server.script = weakenScript
-                        weakenTargets.push(server);
+                        server.script = weakenScript;
+                        server.scriptType = 'weaken';
+                        if (focals.includes(server.hostname)) {
+                            focalWeakenTargets.push(server);
+                        } else {
+                            weakenTargets.push(server);
+                        }
                     } else {
                         // Server needs to be grown before hack or weaken can happen
                         server.remainingThreads = server.idealGrowthThreads;
-                        server.script = growScript
+                        server.script = growScript;
                         server.scriptCost = growScriptCost;
-                        growTargets.push(server);
+                        server.scriptType = 'grow';
+                        if (focals.includes(server.hostname)) {
+                            focalGrowTargets.push(server);
+                        } else {
+                            growTargets.push(server);
+                        }
                     }
                 }
             }
@@ -131,73 +150,37 @@ export async function main(ns) {
 
         // sort target lists by priority
         // sort hackTargets by server.actualHackAmount descending - more valuable targets first
+        focalHackTargets = focalHackTargets.sort((a, b) => (a.actualHackAmount > b.actualHackAmount) ? -1 : 1);
         hackTargets = hackTargets.sort((a, b) => (a.actualHackAmount > b.actualHackAmount) ? -1 : 1);
 
         // import hack stats if existing
         var hackStats = ns.fileExists(reporterFile) ? lib.importJSON(ns, reporterFile) : null;
-        if (hackStats && hackTargets.length > 0) {
-            // remove hackTargets that are impossible
-            for (var i = hackTargets.length - 1; i >= 0; i--) {
-                var target = hackTargets[i];
-                if (hackStats.hasOwnProperty(target.hostname) && hackStats[target.hostname].hasOwnProperty('hack')) {
-                    let totalCount = hackStats[target.hostname]['hack']['count'];
-                    let successCount = hackStats[target.hostname]['hack']['success_count'];
-                    let failCount = hackStats[target.hostname]['hack']['fail_count'];
-                    let candidate = (totalCount > failedHackIgnoreThreshold);
-                    let exclude = (candidate && failCount >= totalCount * acceptableHackFailRatio);
-                    if (exclude) {
-                        // fulcrumassets, I'm looking at you
-                        hackTargets.splice(i, 1);
-                    }
-                }
-            }
-        }
+
+        // remove hackTargets that are impossible (ok, fine, could be "too difficult")
+        focalHackTargets = lib.removeImpossibleHackTargets(focalHackTargets, hackStats, failedHackIgnoreThreshold, acceptableHackFailRatio);
+        hackTargets = lib.removeImpossibleHackTargets(hackTargets, hackStats, failedHackIgnoreThreshold, acceptableHackFailRatio);
 
         // sort weakenTargets by (server.idealThreadRatio / server.idealAmountRatio) to approximate priority of resource expenditure
+        focalWeakenTargets = focalWeakenTargets.sort((a, b) => (a.idealThreadRatio / a.idealAmountRatio > b.idealThreadRatio / b.idealAmountRatio) ? -1 : 1);
         weakenTargets = weakenTargets.sort((a, b) => (a.idealThreadRatio / a.idealAmountRatio > b.idealThreadRatio / b.idealAmountRatio) ? -1 : 1);
 
         // sort growTargets by (server.idealThreadRatio / server.idealAmountRatio) to approximate priority of resource expenditure
+        focalGrowTargets = focalGrowTargets.sort((a, b) => (a.idealThreadRatio / a.idealAmountRatio > b.idealThreadRatio / b.idealAmountRatio) ? -1 : 1);
         growTargets = growTargets.sort((a, b) => (a.idealThreadRatio / a.idealAmountRatio > b.idealThreadRatio / b.idealAmountRatio) ? -1 : 1);
 
-        // running thread identification
-        // e.g.: {"filename":"worker_weaken.js","threads":3,"args":["the-hub",12],"pid":470}
-        var hackProcesses = [];
-        var weakenProcesses = [];
-        var growProcesses = [];
-        for (var host of scriptHosts) {
-            // push [threads, target.hostname] to appropriate array
-            for (let p of host.processes) {
-                if (p.filename == hackScript) {
-                    hackProcesses.push([p.threads, p.args[0]]);
-                } else if (p.filename == weakenScript) {
-                    weakenProcesses.push([p.threads, p.args[0]]);
-                } else if (p.filename == growScript) {
-                    growProcesses.push([p.threads, p.args[0]]);
-                }
-            }
-        }
-
         // identify total resource capacity
-        var totalFreeRam = 0
-        var totalRam = 0
-        for (host of scriptHosts) {
-            totalFreeRam += host.freeRam;
-            totalRam += host.maxRam;
-        }
+        var totalFreeRam = lib.getTotalExploitableRam(scriptHosts);
+        var totalRam = lib.getTotalRam(scriptHosts);
+
+        // process threads:target collections
+        var hackProcesses = lib.getThreadsTargetsForScriptName(scriptHosts, hackScript);
+        var weakenProcesses = lib.getThreadsTargetsForScriptName(scriptHosts, weakenScript);
+        var growProcesses = lib.getThreadsTargetsForScriptName(scriptHosts, growScript);
 
         // set used ram amounts
-        var usedHackRam = 0
-        var usedWeakenRam = 0
-        var usedGrowRam = 0
-        for (let p of hackProcesses) {
-            usedHackRam += p[0] * hackScriptCost
-        }
-        for (let p of weakenProcesses) {
-            usedWeakenRam += p[0] * weakenScriptCost
-        }
-        for (let p of growProcesses) {
-            usedGrowRam += p[0] * growScriptCost
-        }
+        var usedHackRam = lib.getUsedRamByThreadsAndScriptCost(hackProcesses, hackScriptCost)
+        var usedWeakenRam = lib.getUsedRamByThreadsAndScriptCost(weakenProcesses, hackScriptCost)
+        var usedGrowRam = lib.getUsedRamByThreadsAndScriptCost(growProcesses, hackScriptCost)
 
         // set ideal limits
         var idealHackRam = totalRam * maxHackThreadRatio;
@@ -209,110 +192,27 @@ export async function main(ns) {
         var weakenRam = (usedWeakenRam >= idealWeakenRam) ? 0 : totalFreeRam * maxWeakenThreadRatio;
         var growRam = (usedGrowRam >= idealGrowRam) ? 0 : totalFreeRam * maxGrowThreadRatio;
 
-        // placement logic
+        // general placement logic
+        // focals first
+        var updatedRamValues;
+        updatedRamValues = await lib.processScriptBatch(ns, focalHackTargets, scriptHosts, hackProcesses, totalFreeRam, false, hackReporterPort);
+        totalFreeRam = updatedRamValues[0]
+        updatedRamValues = await lib.processScriptBatch(ns, focalWeakenTargets, scriptHosts, weakenProcesses, totalFreeRam, weakenRam, hackReporterPort);
+        totalFreeRam = updatedRamValues[0]
+        weakenRam = updatedRamValues[1]
+        updatedRamValues = await lib.processScriptBatch(ns, focalGrowTargets, scriptHosts, growProcesses, totalFreeRam, growRam, hackReporterPort);
+        totalFreeRam = updatedRamValues[0]
+        growRam = updatedRamValues[1]
 
-        // hack scripts
-        for (var target of hackTargets) {
-            // sort scriptHosts list by RAM available (prevent thread splitting as much as possible);
-            scriptHosts = scriptHosts.sort((a, b) => (a.freeRam > b.freeRam) ? -1 : 1);
-
-            // deduct running threads from remainingThreads counter
-            for (let p of hackProcesses) {
-                if (target.hostname == p[1]) {
-                    target.remainingThreads -= p[0];
-                }
-            }
-            for (var host of scriptHosts) {
-
-                // placement, finally
-                //if (hackRam > hackScriptCost && totalFreeRam > hackScriptCost && target.remainingThreads) {
-                if (totalFreeRam > hackScriptCost && target.remainingThreads) {
-                    // always hack if there is demand, don't mind the hack reservation
-                    var placedThreads = 0;
-                    if (hackReporterPort > 0) {
-                        placedThreads = await lib.evaluateAndPlace(ns, host, target, hackReporterPort);
-                    } else {
-                        placedThreads = await lib.evaluateAndPlace(ns, host, target);
-                    }
-                    if (placedThreads) {
-                        // decrement counters
-                        host.freeRam -= hackScriptCost * placedThreads;
-                        hackRam -= hackScriptCost * placedThreads;
-                        target.remainingThreads -= placedThreads;
-                    }
-                }
-            }
-        }
-
-        // weaken scripts
-        for (var target of weakenTargets) {
-            // sort scriptHosts list by RAM available (prevent thread splitting as much as possible);
-            scriptHosts = scriptHosts.sort((a, b) => (a.freeRam > b.freeRam) ? -1 : 1);
-
-            for (var host of scriptHosts) {
-                // weaken impact only considers the running host - do some math and update counters
-                var threads = 0;
-                var weakenAmount = 0;
-                while (weakenAmount < target.securityDifference) {
-                    weakenAmount = ns.weakenAnalyze(threads, host.cpuCores);
-                    threads += 1;
-                }
-                target.remainingThreads = threads;
-
-                // deduct running threads from  remainingThreads counter (can't be top level, host is important in threads)
-                for (let p of weakenProcesses) {
-                    if (target.hostname == p[1]) {
-                        target.remainingThreads -= p[0];
-                    }
-                }
-
-                // placement, finally
-                if (totalFreeRam > idealHackRam && totalFreeRam > weakenScriptCost && target.remainingThreads) {
-                    var placedThreads = 0;
-                    if (hackReporterPort > 0) {
-                        placedThreads = await lib.evaluateAndPlace(ns, host, target, hackReporterPort);
-                    } else {
-                        placedThreads = await lib.evaluateAndPlace(ns, host, target);
-                    }
-                    if (placedThreads) {
-                        // decrement counters
-                        target.securityDifference -= ns.weakenAnalyze(placedThreads, host.cpuCores);
-                        host.freeRam -= weakenScriptCost * placedThreads;
-                        weakenRam -= weakenScriptCost * placedThreads;
-                    }
-                }
-            }
-        }
-
-        // grow scripts
-        for (var target of growTargets) {
-            // sort scriptHosts list by RAM available (prevent thread splitting as much as possible);
-            scriptHosts = scriptHosts.sort((a, b) => (a.freeRam > b.freeRam) ? -1 : 1);
-
-            // deduct running threads from remainingThreads counter
-            for (let p of growProcesses) {
-                if (target.hostname == p[1]) {
-                    target.remainingThreads -= p[0];
-                }
-            }
-            for (var host of scriptHosts) {
-                // placement, finally
-                if (totalFreeRam > idealHackRam && totalFreeRam > growScriptCost && target.remainingThreads) {
-                    var placedThreads = 0;
-                    if (hackReporterPort > 0) {
-                        placedThreads = await lib.evaluateAndPlace(ns, host, target, hackReporterPort);
-                    } else {
-                        placedThreads = await lib.evaluateAndPlace(ns, host, target);
-                    }
-                    if (placedThreads) {
-                        // decrement counters
-                        host.freeRam -= growScriptCost * placedThreads;
-                        growRam -= growScriptCost * placedThreads;
-                        target.remainingThreads -= placedThreads;
-                    }
-                }
-            }
-        }
+        // remaining targets
+        updatedRamValues = await lib.processScriptBatch(ns, hackTargets, scriptHosts, hackProcesses, totalFreeRam, false, hackReporterPort);
+        totalFreeRam = updatedRamValues[0]
+        updatedRamValues = await lib.processScriptBatch(ns, weakenTargets, scriptHosts, weakenProcesses, totalFreeRam, weakenRam, hackReporterPort);
+        totalFreeRam = updatedRamValues[0]
+        weakenRam = updatedRamValues[1]
+        updatedRamValues = await lib.processScriptBatch(ns, growTargets, scriptHosts, growProcesses, totalFreeRam, growRam, hackReporterPort);
+        totalFreeRam = updatedRamValues[0]
+        growRam = updatedRamValues[1]
 
         await ns.sleep(loopInterval);
     }

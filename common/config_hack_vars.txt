@@ -13,5 +13,6 @@
     "reporter_file": "hack_report.txt",
     "acceptable_hack_fail_ratio": 0.75,
     "failed_hack_ignore_threshold": 100,
-    "hack_reporter_port": 1
+    "hack_reporter_port": 1,
+    "focals": ["n00dles", "phantasy"]
 }

@@ -391,3 +391,104 @@ export function formatPurchaseServerOption(ns, option, ram, cost) {
     out_str += `\t${ns.nFormat(ram * Math.pow(1024, 3), '0 ib')}   \t\$${ns.nFormat(cost, '0.00a')}`;
     return out_str
 }
+
+export async function processScriptBatch(ns, targets, hosts, processes, totalFreeRam, ramLimit=false, listenPort=0) {
+    // hack scripts
+    for (var target of targets) {
+        // sort hosts list by RAM available (prevent thread splitting as much as possible);
+        hosts = hosts.sort((a, b) => (a.freeRam > b.freeRam) ? -1 : 1);
+        for (var host of hosts) {
+            if (host.scriptType == 'weaken') {
+                target.remainingThreads = calcRemainingWeakenThreads(ns, host, target);
+            }
+
+            // deduct running threads from remainingThreads counter
+            for (let p of processes) {
+                if (target.hostname == p[1]) {
+                    target.remainingThreads -= p[0];
+                }
+            }
+
+            // placement, finally
+            var placedThreads = 0
+            if (ramLimit == false && totalFreeRam > target.scriptCost && target.remainingThreads) {
+                placedThreads = await evaluateAndPlace(ns, host, target, listenPort);
+            } else if (totalFreeRam > ramLimit && totalFreeRam > target.scriptCost && target.remainingThreads) {
+                placedThreads = await evaluateAndPlace(ns, host, target, listenPort);
+            }
+            if (placedThreads) {
+                // decrement counters
+                host.freeRam -= target.scriptCost * placedThreads;
+                ramLimit -= target.scriptCost * placedThreads;
+                target.remainingThreads -= placedThreads;
+                totalFreeRam -= target.scriptCost * placedThreads;
+            }
+        }
+    }
+    return [totalFreeRam, ramLimit]
+}
+
+export function calcRemainingWeakenThreads(ns, host, target) {
+    var threads = 0;
+    var weakenAmount = 0;
+    while (weakenAmount < target.securityDifference) {
+        weakenAmount = ns.weakenAnalyze(threads, host.cpuCores);
+        threads += 1;
+    }
+    return threads;
+}
+
+export function getTotalExploitableRam(hosts) {
+    var totalFreeRam = 0;
+    for (let host of hosts) {
+        totalFreeRam += host.freeRam;
+    }
+    return totalFreeRam
+}
+
+export function getTotalRam(hosts) {
+    var totalRam = 0;
+    for (let host of hosts) {
+        totalRam += host.maxRam;
+    }
+    return totalRam
+}
+
+export function getThreadsTargetsForScriptName(hosts, scriptName) {
+    var threadsTargets = []
+    for (var host of hosts) {
+        for (let p of host.processes) {
+            if (p.filename == scriptName) {
+                threadsTargets.push([p.threads, p.args[0]]);
+            }
+        }
+    }
+    return threadsTargets;
+}
+
+export function getUsedRamByThreadsAndScriptCost(processThreadsArgs, scriptCost) {
+    var usedRam = 0
+    for (let p of processThreadsArgs) {
+        usedRam += p[0] * scriptCost;
+    }
+    return usedRam
+}
+
+export function removeImpossibleHackTargets(targets, stats, failedHackIgnoreThreshold, acceptableHackFailRatio) {
+    if (stats && targets.length > 0) {
+        for (var i = targets.length - 1; i >= 0; i--) {
+            var target = targets[i];
+            if (stats.hasOwnProperty(target.hostname) && stats[target.hostname].hasOwnProperty('hack')) {
+                let totalCount = stats[target.hostname]['hack']['count'];
+                let successCount = stats[target.hostname]['hack']['success_count'];
+                let failCount = stats[target.hostname]['hack']['fail_count'];
+                let candidate = (totalCount > failedHackIgnoreThreshold);
+                let exclude = (candidate && failCount >= totalCount * acceptableHackFailRatio);
+                if (exclude) {
+                    targets.splice(i, 1);
+                }
+            }
+        }
+    }
+    return targets
+}
