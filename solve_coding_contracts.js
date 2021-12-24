@@ -2,8 +2,9 @@
 import {findHostsRecursive} from 'lib.js';
 export async function main(ns) {
     var hostContractMap = {}
-    for (var host of findHostsRecursive(ns, 'home', 30)) {
-        let contracts = ns.ls(host, '.cct')
+    var excludeHosts = ['home'].concat(ns.getPurchasedServers);
+    for (var host of findHostsRecursive(ns, 'home', 30, excludeHosts)) {
+        let contracts = ns.ls(host, 'contract')
         if (contracts.length > 0) {
             hostContractMap[host] = contracts
         }
