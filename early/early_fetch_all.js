@@ -4,6 +4,7 @@ export async function main(ns) {
         'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/early/early_fetch_all.js',
         'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/common/lib.js',
         'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/common/operation_strings.txt',
+        'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/common/config_hack_vars.txt',
         'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/early/buy_server.js',
         'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/early/deploy_worker.js',
         'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/early/get_info.js',
