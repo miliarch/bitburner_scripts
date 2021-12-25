@@ -398,7 +398,7 @@ export async function processScriptBatch(ns, targets, hosts, processes, totalFre
         // sort hosts list by RAM available (prevent thread splitting as much as possible);
         hosts = hosts.sort((a, b) => (a.freeRam > b.freeRam) ? -1 : 1);
         for (var host of hosts) {
-            if (host.scriptType == 'weaken') {
+            if (target.scriptType == 'weaken') {
                 target.remainingThreads = calcRemainingWeakenThreads(ns, host, target);
             }
 
