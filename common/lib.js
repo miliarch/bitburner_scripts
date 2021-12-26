@@ -362,10 +362,11 @@ export function deleteServer(ns, hostname) {
 export function purchaseServer(ns, hostname, ram) {
     // Purchase server of given size and name
     const operation = 'purchase_server';
+    const player = ns.getPlayer()
     let size = ns.nFormat(ram * Math.pow(1024, 3), '0.00 ib');
     let cost = `\$${ns.nFormat(ns.getPurchasedServerCost(ram), '0.00a')}`;
     var extra = {};
-    const canPurchase = ns.getPurchasedServerLimit() > ns.getPurchasedServers().length;
+    const canPurchase = ns.getPurchasedServerLimit() > ns.getPurchasedServers().length && player.money > ns.getPurchasedServerCost(ram);
     var result;
     if (canPurchase) {
         var server = ns.purchaseServer(hostname, ram);
@@ -375,7 +376,7 @@ export function purchaseServer(ns, hostname, ram) {
         result = outputMessage(ns, match, server, operation, operation, extra);
     } else {
         // give the player the bad news
-        extra['fail'] = 'max servers, delete some to buy more';
+        extra['fail'] = 'max servers owned or not enough money';
         result = outputMessage(ns, false, true, hostname, operation, extra);
     }
     return result;

@@ -8,11 +8,10 @@ export async function main(ns) {
     if (hostname && option) {
         // buy server
         let ram = Math.pow(2, option);
-        let server = purchaseServer(ns, hostname, ram);
-        out_str += `${server}`;
+        purchaseServer(ns, hostname, ram);
     } else {
         // list options
         out_str += presentPurchaseServerOptions(ns);
+        ns.tprint(`${out_str}\n\n`);
     }
-    ns.tprint(`${out_str}\n\n`);
 }
