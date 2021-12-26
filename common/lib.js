@@ -355,7 +355,7 @@ export async function hackTarget(ns, hostname, threads=null) {
             extra['success'] += `\$${ns.nFormat(result, '0.00a')}`
             outputMessage(ns, result, result, hostname, operation, extra);
         } else {
-            out_str = outputMessage(ns, result, true, hostname, operation, extra);
+            out_str = outputMessage(ns, result, true, hostname, operation);
         }
     } else {
         extra['fail'] = `${hostname} does not exist`
