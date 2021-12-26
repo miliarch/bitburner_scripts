@@ -329,9 +329,13 @@ export function outputMessage(ns, result, expected, prepend, operation, extra) {
     return out_str
 }
 
-export async function writeMessageToPort(port, message) {
-    while (!port.tryWrite(JSON.stringify(message))) {
-        await ns.sleep(1000)
+export async function writeMessageToPort(ns, port, message, blocking=true) {
+    if (blocking) {
+        while (!port.tryWrite(JSON.stringify(message))) {
+            await ns.sleep(1000)
+        }
+    } else {
+        port.tryWrite(JSON.stringify(message))
     }
 }
 

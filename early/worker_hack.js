@@ -12,6 +12,6 @@ export async function main(ns) {
             'target': target,
             'value': result,
         }
-        await writeMessageToPort(broadcastPort, message);
+        await writeMessageToPort(ns, broadcastPort, message, false);
     }
 }
