@@ -1,12 +1,14 @@
 {
   "delete_server": {
     "fail": {
+      "toast": true,
       "print": true,
       "tprint": true,
       "type": "error",
       "value": "could not delete server"
     },
     "success": {
+      "toast": true,
       "print": true,
       "tprint": false,
       "type": "success",
@@ -15,12 +17,14 @@
   },
   "kill_all_processes_on_target": {
     "fail": {
+      "toast": true,
       "print": true,
       "tprint": false,
       "type": "info",
       "value": "no processes to kill"
     },
     "success": {
+      "toast": true,
       "print": true,
       "tprint": false,
       "type": "success",
@@ -29,16 +33,82 @@
   },
   "purchase_server": {
     "fail": {
+      "toast": true,
       "print": true,
       "tprint": true,
       "type": "error",
       "value": "could not purchase server"
     },
     "success": {
+      "toast": true,
       "print": true,
       "tprint": false,
       "type": "success",
       "value": "purchased server"
+    }
+  },
+  "hack_target": {
+    "fail": {
+      "toast": true,
+      "print": true,
+      "tprint": false,
+      "type": "warning",
+      "value": "failed to hack server"
+    },
+    "success": {
+      "toast": true,
+      "print": true,
+      "tprint": false,
+      "type": "success",
+      "value": "hacked server"
+    }
+  },
+  "grow_target": {
+    "fail": {
+      "toast": true,
+      "print": true,
+      "tprint": false,
+      "type": "warning",
+      "value": "failed to grow server"
+    },
+    "success": {
+      "toast": false,
+      "print": true,
+      "tprint": false,
+      "type": "info",
+      "value": "grew server"
+    }
+  },
+  "weaken_target": {
+    "fail": {
+      "toast": true,
+      "print": true,
+      "tprint": false,
+      "type": "warning",
+      "value": "failed to weaken server"
+    },
+    "success": {
+      "toast": false,
+      "print": true,
+      "tprint": false,
+      "type": "info",
+      "value": "weakened server"
+    }
+  },
+  "check_copy_scripts": {
+    "fail": {
+      "toast": true,
+      "print": true,
+      "tprint": false,
+      "type": "error",
+      "value": "could not copy script"
+    },
+    "success": {
+      "toast": false,
+      "print": false,
+      "tprint": false,
+      "type": "info",
+      "value": "copied script"
     }
   }
 }

@@ -224,7 +224,7 @@ export async function evaluateAndPlace(ns, host, target, port=0) {
         // placement hasn't occurred yet and can
         let availableThreads = calcAvailableThreads(host.freeRam, target.scriptCost);
         let placedThreads = (availableThreads > target.remainingThreads) ? target.remainingThreads : availableThreads;
-        await checkCopyScript(ns, host, target);
+        await checkCopyScripts(ns, host, target);
         var success = false;
         if (port > 0) {
             success = await placeWorker(ns, host, target, placedThreads, port);
@@ -251,16 +251,15 @@ export async function checkRootHost(ns, target) {
     }
 }
 
-export async function checkCopyScript(ns, host, target) {
+export async function checkCopyScripts(ns, host, target) {
     // make sure file exists on target host
-    let success = await ns.scp(target.script, 'home', host.hostname);
-    var out_str = ''
-    if (success) {
-        out_str = `Copied ${target.script} from home to ${host.hostname}`
-    } else {
-        out_str = `Copying ${target.script} from home to ${host.hostname} failed`;
-        ns.toast(out_str, 'warning');
-    ns.print(out_str);
+    const operation = 'check_copy_scripts'
+    for (let script of [target.script].concat(target.dependentScripts)) {
+        var extra = {}
+        extra['success'] = `${script} ${target.hostname}`;
+        extra['fail'] = `${script} ${target.hostname}`;
+        let success = await ns.scp(script, 'home', host.hostname);
+        outputMessage(ns, success, true, operation, operation, extra);
     }
 }
 
@@ -280,8 +279,10 @@ export function presentPurchaseServerOptions(ns) {
     return out_str
 }
 
-export function toastPrint(ns, out_str, variant, print=true, tprint=false) {
-    ns.toast(out_str, variant)
+export function toastPrint(ns, out_str, variant, print=true, tprint=false, toast=true) {
+    if (toast) {
+        ns.toast(out_str, variant)
+    }
     if (print) {
         ns.print(`${variant}: ${out_str}`)
     }
@@ -317,15 +318,101 @@ export function outputMessage(ns, result, expected, prepend, operation, extra) {
         if (extra && extra.hasOwnProperty('success')) {
             out_str += ` (${extra['success']})`;
         }
-        toastPrint(ns, out_str, messaging['success']['type'], messaging['success']['print'], messaging['success']['tprint'])
+        toastPrint(ns, out_str, messaging['success']['type'], messaging['success']['print'], messaging['success']['tprint'], messaging['success']['toast'])
     } else {
         out_str += `${messaging['fail']['value']}`
         if (extra && extra.hasOwnProperty('fail')) {
             out_str += ` (${extra['fail']})`;
         }
-        toastPrint(ns, out_str, messaging['fail']['type'], messaging['fail']['print'], messaging['fail']['tprint'])
+        toastPrint(ns, out_str, messaging['fail']['type'], messaging['fail']['print'], messaging['fail']['tprint'], messaging['fail']['toast'])
     }
     return out_str
+}
+
+export async function writeMessageToPort(port, message) {
+    while (!port.tryWrite(JSON.stringify(message))) {
+        await ns.sleep(1000)
+    }
+}
+
+export async function hackTarget(ns, hostname, threads=null) {
+    // Hack target system
+    const operation = 'hack_target';
+    var result;
+    var out_str;
+    var extra = {}
+    if (ns.serverExists(hostname)) {
+        extra['success'] = ``;
+        extra['fail'] = ``;
+        if (threads) {
+            extra['success'] += `${threads} / `
+            extra['fail'] += `${threads} / `
+            result = await ns.hack(hostname, {"threads": threads});
+        } else {
+            result = await ns.hack(hostname);
+        }
+        if (result != 0) {
+            extra['success'] += `\$${ns.nFormat(result, '0.00a')}`
+            outputMessage(ns, result, result, hostname, operation, extra);
+        } else {
+            out_str = outputMessage(ns, result, true, hostname, operation, extra);
+        }
+    } else {
+        extra['fail'] = `${hostname} does not exist`
+        out_str = outputMessage(ns, false, true, hostname, operation, extra);
+    }
+    return result;
+}
+
+export async function growTarget(ns, hostname, threads=null) {
+    // Hack target system
+    const operation = 'grow_target';
+    var result;
+    var out_str;
+    var extra = {}
+    if (ns.serverExists(hostname)) {
+        extra['success'] = ``;
+        extra['fail'] = ``;
+        if (threads) {
+            extra['success'] += `${threads} / `
+            extra['fail'] += `${threads} / `
+            result = await ns.grow(hostname, {"threads": threads});
+        } else {
+            result = await ns.grow(hostname);
+        }
+        extra['success'] += `${ns.nFormat(result, '0.00')}`
+        outputMessage(ns, result, result, hostname, operation, extra);
+    } else {
+        extra['fail'] = `${hostname} does not exist`
+        outputMessage(ns, false, true, hostname, operation, extra);
+    }
+    return result;
+}
+
+
+export async function weakenTarget(ns, hostname, threads=null) {
+    // Hack target system
+    const operation = 'weaken_target';
+    var result;
+    var out_str;
+    var extra = {}
+    if (ns.serverExists(hostname)) {
+        extra['success'] = ``;
+        extra['fail'] = ``;
+        if (threads) {
+            extra['success'] += `${threads} / `
+            extra['fail'] += `${threads} / `
+            result = await ns.weaken(hostname, {"threads": threads});
+        } else {
+            result = await ns.weaken(hostname);
+        }
+        extra['success'] += `${ns.nFormat(result, '0.00')}`
+        outputMessage(ns, result, result, hostname, operation, extra);
+    } else {
+        extra['fail'] = `${hostname} does not exist`
+        outputMessage(ns, false, true, hostname, operation, extra);
+    }
+    return result;
 }
 
 export function killAllProcessesOnTarget(ns, hostname) {

@@ -36,6 +36,7 @@ export async function main(ns) {
         const hackScript = config['hack_script'];
         const growScript = config['grow_script'];
         const weakenScript = config['weaken_script'];
+        const dependentScripts = config['dependent_scripts'];
         const maxHackThreadRatio = config['max_hack_thread_ratio'];
         const maxGrowThreadRatio = config['max_grow_thread_ratio'];
         const maxWeakenThreadRatio = config['max_weaken_thread_ratio'];
@@ -86,6 +87,7 @@ export async function main(ns) {
             // Convert to server object, add some new properties
             var server = ns.getServer(hostname);
             server.processes = ns.ps(server.hostname);
+            server.dependentScripts = dependentScripts;
             server.canHack = lib.canHack(ns, server);
             server.canRoot = lib.canRoot(ns, server);
             server.freeRam = (server.hostname == 'home') ? lib.freeRam(server) - homeReservedRam : lib.freeRam(server);
