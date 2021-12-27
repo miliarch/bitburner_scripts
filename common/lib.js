@@ -524,8 +524,8 @@ export function calcRemainingWeakenThreads(ns, host, target) {
     var threads = 0;
     var weakenAmount = 0;
     while (weakenAmount < target.securityDifference) {
-        weakenAmount = ns.weakenAnalyze(threads, host.cpuCores);
         threads += 1;
+        weakenAmount = ns.weakenAnalyze(threads, host.cpuCores);
     }
     return threads;
 }
