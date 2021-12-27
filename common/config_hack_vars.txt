@@ -12,7 +12,7 @@
     "reporter_script": "hack_report.js",
     "reporter_file": "hack_report.txt",
     "acceptable_hack_fail_ratio": 0.75,
-    "failed_hack_ignore_threshold": 100,
+    "failed_hack_ignore_threshold": 25,
     "hack_reporter_port": 1,
     "focals": ["n00dles", "phantasy"],
     "dependent_scripts": ["lib.js", "operation_strings.txt"]
