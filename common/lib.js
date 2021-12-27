@@ -218,7 +218,7 @@ export function placeWorker(ns, host, target, threads, port=0) {
 }
 
 export async function evaluateAndPlace(ns, host, target, port=0) {
-    let needsPlacement = target.remainingThreads > 0;
+    let needsPlacement = parseInt(target.remainingThreads) > 0;
     let hostHasCapacity = host.freeRam >= target.scriptCost;
     if (needsPlacement && hostHasCapacity) {
         // placement hasn't occurred yet and can
@@ -485,13 +485,13 @@ export function formatPurchaseServerOption(ns, option, ram, cost) {
 }
 
 export async function processScriptBatch(ns, targets, hosts, processes, totalFreeRam, ramLimit=false, listenPort=0) {
-    // hack scripts
     for (var target of targets) {
         // sort hosts list by RAM available (prevent thread splitting as much as possible);
         hosts = hosts.sort((a, b) => (a.freeRam > b.freeRam) ? -1 : 1);
         for (var host of hosts) {
             if (target.scriptType == 'weaken') {
                 target.remainingThreads = calcRemainingWeakenThreads(ns, host, target);
+                target.securityDifference -= ns.weakenAnalyze(target.remainingThreads, host.cpuCores);
             }
 
             // deduct running threads from remainingThreads counter
@@ -503,9 +503,9 @@ export async function processScriptBatch(ns, targets, hosts, processes, totalFre
 
             // placement, finally
             var placedThreads = 0
-            if (ramLimit == false && totalFreeRam > target.scriptCost && target.remainingThreads) {
+            if (ramLimit == false && totalFreeRam > target.scriptCost) {
                 placedThreads = await evaluateAndPlace(ns, host, target, listenPort);
-            } else if (totalFreeRam > ramLimit && totalFreeRam > target.scriptCost && target.remainingThreads) {
+            } else if (totalFreeRam > ramLimit && totalFreeRam > target.scriptCost) {
                 placedThreads = await evaluateAndPlace(ns, host, target, listenPort);
             }
             if (placedThreads) {
@@ -522,7 +522,7 @@ export async function processScriptBatch(ns, targets, hosts, processes, totalFre
 
 export function calcRemainingWeakenThreads(ns, host, target) {
     var threads = 0;
-    var weakenAmount = 0;
+    var weakenAmount = ns.weakenAnalyze(threads, host.cpuCores);
     while (weakenAmount < target.securityDifference) {
         threads += 1;
         weakenAmount = ns.weakenAnalyze(threads, host.cpuCores);
