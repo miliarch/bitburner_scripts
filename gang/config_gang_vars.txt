@@ -1,0 +1,12 @@
+{
+    "faction": "NiteSec",
+    "member_name_template": "member",
+    "min_wanted_threshold": 3,
+    "max_wanted_threshold": 1000,
+    "max_wanted_penalty_percent": 0.5,
+    "max_purchase_ratio": 0.05,
+    "min_member_hacking_level": 100,
+    "min_member_hack_ascension_multiplier": 1.1,
+    "active_task_name": "Money Laundering",
+    "reduction_task_name": "Ethical Hacking"
+}
