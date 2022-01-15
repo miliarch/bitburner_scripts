@@ -572,7 +572,6 @@ export function removeImpossibleHackTargets(targets, stats, failedHackIgnoreThre
             var target = targets[i];
             if (stats.hasOwnProperty(target.hostname) && stats[target.hostname].hasOwnProperty('hack')) {
                 let totalCount = stats[target.hostname]['hack']['count'];
-                let successCount = stats[target.hostname]['hack']['success_count'];
                 let failCount = stats[target.hostname]['hack']['fail_count'];
                 let candidate = (totalCount > failedHackIgnoreThreshold);
                 let exclude = (candidate && failCount >= totalCount * acceptableHackFailRatio);
