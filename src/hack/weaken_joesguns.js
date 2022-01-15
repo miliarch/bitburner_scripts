@@ -1,5 +1,7 @@
 /** @param {NS} ns **/
-import * as lib from '/common/lib.js';
+import { importJSON, findHostsRecursive, freeRam,
+         getTotalFreeRam, getTotalRam, evaluateAndPlace } from '/common/lib.js';
+import { canHack, canRoot, checkRootHost } from '/hack/lib.js';
 
 export async function main(ns) {
     // arguments
@@ -22,7 +24,7 @@ export async function main(ns) {
         configUpdateCounter -= 1;
         if (configUpdateCounter <= 0) {
             // import configuration
-            config = lib.importJSON(ns, configFile);
+            config = importJSON(ns, configFile);
             ns.print('imported config:\n', config);
             configUpdateCounter = configUpdateInterval;
         }
@@ -53,7 +55,7 @@ export async function main(ns) {
         }
 
         // scan and save unique target hostnames to target depth
-        var hosts = lib.findHostsRecursive(ns, scan_target, depth);
+        var hosts = findHostsRecursive(ns, scan_target, depth);
 
         // Disable logging
         ns.disableLog('ALL');
@@ -68,14 +70,14 @@ export async function main(ns) {
             var server = ns.getServer(hostname);
             server.processes = ns.ps(server.hostname);
             server.dependentScripts = dependentScripts;
-            server.canHack = lib.canHack(ns, server);
-            server.canRoot = lib.canRoot(ns, server);
-            server.freeRam = (server.hostname == 'home') ? lib.freeRam(server) - homeReservedRam : lib.freeRam(server);
+            server.canHack = canHack(ns, server);
+            server.canRoot = canRoot(ns, server);
+            server.freeRam = (server.hostname == 'home') ? freeRam(server) - homeReservedRam : freeRam(server);
 
             // Perform some analysis and categorize server in appropriate bins
             if (server.hasAdminRights || server.canRoot) {
                 // Admin rights are available, or root can be performed
-                await lib.checkRootHost(ns, server);
+                await checkRootHost(ns, server);
                 if (server.maxRam > 0) {
                     // server can run things, it's a scriptHost
                     scriptHosts.push(server);
@@ -94,8 +96,8 @@ export async function main(ns) {
         }
 
         // identify total resource capacity
-        var totalFreeRam = lib.getTotalExploitableRam(scriptHosts);
-        var totalRam = lib.getTotalRam(scriptHosts);
+        var totalFreeRam = getTotalFreeRam(scriptHosts);
+        var totalRam = getTotalRam(scriptHosts);
 
         // general placement logic
         for (var target of weakenTargets) {
@@ -105,7 +107,7 @@ export async function main(ns) {
                 // placement, finally
                 var placedThreads = 0
                 if (totalFreeRam > target.scriptCost) {
-                    placedThreads = await lib.evaluateAndPlace(ns, host, target, hackReporterPort);
+                    placedThreads = await evaluateAndPlace(ns, host, target, hackReporterPort);
                 }
                 if (placedThreads) {
                     // decrement counters

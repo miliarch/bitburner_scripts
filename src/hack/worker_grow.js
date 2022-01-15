@@ -1,5 +1,6 @@
 /** @param {NS} ns **/
-import {growTarget, writeMessageToPort} from '/common/lib.js';
+import { writeMessageToPort } from '/common/lib.js';
+import { growTarget } from '/hack/lib.js';
 export async function main(ns) {
     // Single operation grower
     var target = ns.args[0];

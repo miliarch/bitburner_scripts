@@ -1,5 +1,6 @@
 /** @param {NS} ns **/
-import {hackTarget, writeMessageToPort} from '/common/lib.js';
+import { writeMessageToPort } from '/common/lib.js';
+import { hackTarget } from '/hack/lib.js';
 export async function main(ns) {
     // Single operation hacker that reports results to given port
     var target = ns.args[0];

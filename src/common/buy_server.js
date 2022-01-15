@@ -1,6 +1,6 @@
 /** @param {NS} ns **/
 // Buy server - no more traveling the globe to find the right-fit server (plus larger sizes)
-import {presentPurchaseServerOptions, purchaseServer} from '/common/lib.js';
+import { presentPurchaseServerOptions, purchaseServer } from '/common/lib.js';
 export async function main(ns) {
     const hostname = ns.args[0] ? ns.args[0] : false;
     const option = ns.args[1] ? ns.args[1] : false;

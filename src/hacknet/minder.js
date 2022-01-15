@@ -125,7 +125,7 @@ export async function main(ns) {
             } else if (upgradeMap.level) {
                 let result = ns.hacknet.upgradeLevel(upgradeMap.identifiedNode, 10);
                 if (result) {
-                    out_str = `Upgraded levells for hacknet-node-${upgradeMap.identifiedNode} by 10! Spent \$${ns.nFormat(lowestCostSeen, '0.00a')}.`
+                    out_str = `Upgraded levels for hacknet-node-${upgradeMap.identifiedNode} by 10! Spent \$${ns.nFormat(lowestCostSeen, '0.00a')}.`
                     ns.toast(out_str, 'info');
                 } else {
                     out_str = `Failed to upgrade level for hacknet-node-${upgradeMap.identifiedNode} for \$${ns.nFormat(lowestCostSeen, '0.00a')}.`

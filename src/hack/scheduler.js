@@ -1,5 +1,8 @@
 /** @param {NS} ns **/
-import * as lib from '/common/lib.js';
+import { importJSON, findHostsRecursive, freeRam, getTotalFreeRam, getTotalRam,
+         getThreadsArgsForScriptName, calcUsedRamFromThreadsArgs } from '/common/lib.js';
+import { canHack, canRoot, checkRootHost, estimateHackThreads, getIdealGrowthThreads,
+         removeImpossibleHackTargets, processScriptBatch } from '/hack/lib.js';
 
 export async function main(ns) {
     // arguments
@@ -23,7 +26,7 @@ export async function main(ns) {
         configUpdateCounter -= 1;
         if (configUpdateCounter <= 0) {
             // import configuration
-            config = lib.importJSON(ns, configFile);
+            config = importJSON(ns, configFile);
             ns.print('imported config:\n', config);
             configUpdateCounter = configUpdateInterval;
         }
@@ -68,7 +71,7 @@ export async function main(ns) {
         }
 
         // scan and save unique target hostnames to target depth
-        var hosts = lib.findHostsRecursive(ns, scan_target, depth);
+        var hosts = findHostsRecursive(ns, scan_target, depth);
 
         // Disable logging
         ns.disableLog('ALL');
@@ -88,23 +91,23 @@ export async function main(ns) {
             var server = ns.getServer(hostname);
             server.processes = ns.ps(server.hostname);
             server.dependentScripts = dependentScripts;
-            server.canHack = lib.canHack(ns, server);
-            server.canRoot = lib.canRoot(ns, server);
-            server.freeRam = (server.hostname == 'home') ? lib.freeRam(server) - homeReservedRam : lib.freeRam(server);
+            server.canHack = canHack(ns, server);
+            server.canRoot = canRoot(ns, server);
+            server.freeRam = (server.hostname == 'home') ? freeRam(server) - homeReservedRam : freeRam(server);
             server.moneyThreshold = server.moneyMax * moneyThresholdMultiplier;
             server.securityThreshold = server.minDifficulty + securityModifier;
             server.securityDifference = server.hackDifficulty - server.securityThreshold;
-            server.idealHackThreads = lib.estimateHackThreads(ns, server.hostname, server.moneyAvailable * moneyMaxHackAmountMultiplier);
+            server.idealHackThreads = estimateHackThreads(ns, server.hostname, server.moneyAvailable * moneyMaxHackAmountMultiplier);
             server.actualHackAmount = (ns.hackAnalyze(server.hostname) * server.moneyAvailable) * server.idealHackThreads;
             server.potentialHackAmount = (ns.hackAnalyze(server.hostname) * server.moneyMax) * server.idealHackThreads;
-            server.idealGrowthThreads = lib.getIdealGrowthThreads(ns, server.cpuCores, server.hostname, growthMultiplier);
+            server.idealGrowthThreads = getIdealGrowthThreads(ns, server.cpuCores, server.hostname, growthMultiplier);
             server.idealThreadRatio = server.idealHackThreads / server.idealGrowthThreads;
             server.idealAmountRatio = server.actualHackAmount / server.potentialHackAmount;
 
             // Perform some analysis and categorize server in appropriate bins
             if (server.hasAdminRights || server.canRoot) {
                 // Admin rights are available, or root can be performed
-                await lib.checkRootHost(ns, server);
+                await checkRootHost(ns, server);
                 if (server.maxRam > 0) {
                     // server can run things, it's a scriptHost
                     scriptHosts.push(server);
@@ -156,11 +159,11 @@ export async function main(ns) {
         hackTargets = hackTargets.sort((a, b) => (a.actualHackAmount > b.actualHackAmount) ? -1 : 1);
 
         // import hack stats if existing
-        var hackStats = ns.fileExists(reporterFile) ? lib.importJSON(ns, reporterFile) : null;
+        var hackStats = ns.fileExists(reporterFile) ? importJSON(ns, reporterFile) : null;
 
         // remove hackTargets that are impossible (ok, fine, could be "too difficult")
-        focalHackTargets = lib.removeImpossibleHackTargets(focalHackTargets, hackStats, failedHackIgnoreThreshold, acceptableHackFailRatio);
-        hackTargets = lib.removeImpossibleHackTargets(hackTargets, hackStats, failedHackIgnoreThreshold, acceptableHackFailRatio);
+        focalHackTargets = removeImpossibleHackTargets(focalHackTargets, hackStats, failedHackIgnoreThreshold, acceptableHackFailRatio);
+        hackTargets = removeImpossibleHackTargets(hackTargets, hackStats, failedHackIgnoreThreshold, acceptableHackFailRatio);
 
         // sort weakenTargets by (server.idealThreadRatio / server.idealAmountRatio) to approximate priority of resource expenditure
         focalWeakenTargets = focalWeakenTargets.sort((a, b) => (a.idealThreadRatio / a.idealAmountRatio > b.idealThreadRatio / b.idealAmountRatio) ? -1 : 1);
@@ -171,18 +174,18 @@ export async function main(ns) {
         growTargets = growTargets.sort((a, b) => (a.idealThreadRatio / a.idealAmountRatio > b.idealThreadRatio / b.idealAmountRatio) ? -1 : 1);
 
         // identify total resource capacity
-        var totalFreeRam = lib.getTotalExploitableRam(scriptHosts);
-        var totalRam = lib.getTotalRam(scriptHosts);
+        var totalFreeRam = getTotalFreeRam(scriptHosts);
+        var totalRam = getTotalRam(scriptHosts);
 
         // process threads:target collections
-        var hackProcesses = lib.getThreadsTargetsForScriptName(scriptHosts, hackScript);
-        var weakenProcesses = lib.getThreadsTargetsForScriptName(scriptHosts, weakenScript);
-        var growProcesses = lib.getThreadsTargetsForScriptName(scriptHosts, growScript);
+        var hackProcesses = getThreadsArgsForScriptName(scriptHosts, hackScript);
+        var weakenProcesses = getThreadsArgsForScriptName(scriptHosts, weakenScript);
+        var growProcesses = getThreadsArgsForScriptName(scriptHosts, growScript);
 
         // set used ram amounts
-        var usedHackRam = lib.getUsedRamByThreadsAndScriptCost(hackProcesses, hackScriptCost)
-        var usedWeakenRam = lib.getUsedRamByThreadsAndScriptCost(weakenProcesses, hackScriptCost)
-        var usedGrowRam = lib.getUsedRamByThreadsAndScriptCost(growProcesses, hackScriptCost)
+        var usedHackRam = calcUsedRamFromThreadsArgs(hackProcesses, hackScriptCost)
+        var usedWeakenRam = calcUsedRamFromThreadsArgs(weakenProcesses, hackScriptCost)
+        var usedGrowRam = calcUsedRamFromThreadsArgs(growProcesses, hackScriptCost)
 
         // set ideal limits
         var idealHackRam = totalRam * maxHackThreadRatio;
@@ -197,22 +200,22 @@ export async function main(ns) {
         // general placement logic
         // focals first
         var updatedRamValues;
-        updatedRamValues = await lib.processScriptBatch(ns, focalHackTargets, scriptHosts, hackProcesses, totalFreeRam, false, hackReporterPort);
+        updatedRamValues = await processScriptBatch(ns, focalHackTargets, scriptHosts, hackProcesses, totalFreeRam, false, hackReporterPort);
         totalFreeRam = updatedRamValues[0]
-        updatedRamValues = await lib.processScriptBatch(ns, focalWeakenTargets, scriptHosts, weakenProcesses, totalFreeRam, weakenRam, hackReporterPort);
+        updatedRamValues = await processScriptBatch(ns, focalWeakenTargets, scriptHosts, weakenProcesses, totalFreeRam, weakenRam, hackReporterPort);
         totalFreeRam = updatedRamValues[0]
         weakenRam = updatedRamValues[1]
-        updatedRamValues = await lib.processScriptBatch(ns, focalGrowTargets, scriptHosts, growProcesses, totalFreeRam, growRam, hackReporterPort);
+        updatedRamValues = await processScriptBatch(ns, focalGrowTargets, scriptHosts, growProcesses, totalFreeRam, growRam, hackReporterPort);
         totalFreeRam = updatedRamValues[0]
         growRam = updatedRamValues[1]
 
         // remaining targets
-        updatedRamValues = await lib.processScriptBatch(ns, hackTargets, scriptHosts, hackProcesses, totalFreeRam, false, hackReporterPort);
+        updatedRamValues = await processScriptBatch(ns, hackTargets, scriptHosts, hackProcesses, totalFreeRam, false, hackReporterPort);
         totalFreeRam = updatedRamValues[0]
-        updatedRamValues = await lib.processScriptBatch(ns, weakenTargets, scriptHosts, weakenProcesses, totalFreeRam, weakenRam, hackReporterPort);
+        updatedRamValues = await processScriptBatch(ns, weakenTargets, scriptHosts, weakenProcesses, totalFreeRam, weakenRam, hackReporterPort);
         totalFreeRam = updatedRamValues[0]
         weakenRam = updatedRamValues[1]
-        updatedRamValues = await lib.processScriptBatch(ns, growTargets, scriptHosts, growProcesses, totalFreeRam, growRam, hackReporterPort);
+        updatedRamValues = await processScriptBatch(ns, growTargets, scriptHosts, growProcesses, totalFreeRam, growRam, hackReporterPort);
         totalFreeRam = updatedRamValues[0]
         growRam = updatedRamValues[1]
 

@@ -1,5 +1,5 @@
 /** @param {NS} ns **/
-import * as lib from '/common/lib.js';
+import { importJSON } from '/common/lib.js';
 function roundHundreds(value) {
     return Math.round(value * 100) / 100;
 }
@@ -145,7 +145,7 @@ export async function main(ns) {
         configUpdateCounter -= 1;
         if (configUpdateCounter <= 0) {
             // import configuration
-            config = lib.importJSON(ns, configFile);
+            config = importJSON(ns, configFile);
             ns.print('imported config:\n', config);
             configUpdateCounter = configUpdateInterval;
         }

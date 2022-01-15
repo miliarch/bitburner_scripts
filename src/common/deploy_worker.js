@@ -1,7 +1,8 @@
 /** @param {NS} ns **/
 // Deploy script; exec arbitrary script on specified host with target and thread count
+import { sanitizeScriptNameArgument } from "/common/lib";
 export async function main(ns) {
-    var scriptName = ns.args[0];
+    var scriptName = sanitizeScriptNameArgument(ns.args[0]);
     var host = ns.args[1];
     var target = ns.args[2] ? ns.args[2] : host;
     var threads = ns.args[3] ? ns.args[3] : 0;

@@ -1,6 +1,6 @@
 /** @param {NS} ns **/
 // very much a work in progress
-import {findHostsRecursive} from 'common/lib.js';
+import { findHostsRecursive } from '/common/lib.js';
 export async function main(ns) {
     var hostContractMap = {}
     var excludeHosts = ['home'].concat(ns.getPurchasedServers);

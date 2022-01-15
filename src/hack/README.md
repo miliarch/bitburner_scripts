@@ -46,31 +46,31 @@ run hack/remote_root.js n00dles
 
 ### Hack server at max supported threads for host
 
-Local (from any):
+Local (from any host that has the file):
 ```
 run hack/worker_automatic.js
 ```
 
 Remote (run on and target `n00dles`):
 ```
-run hack/deploy_worker.js worker_automatic.js n00dles
+run common/deploy_worker.js /hack/worker_automatic.js n00dles
 ```
 
 Remote on target host (run on `home`, target `n00dles`):
 ```
-run hack/deploy_worker.js worker_automatic.js home n00dles
+run common/deploy_worker.js /hack/worker_automatic.js home n00dles
 ```
 
 ### Hack server at specific thread count
 
 Remote (run on `n00dles`, target `n00dles`):
 ```
-run hack/deploy_worker.js worker_automatic.js n00dles n00dles 2
+run common/deploy_worker.js /hack/worker_automatic.js n00dles n00dles 2
 ```
 
 Remote on target host (run on `home`, target `n00dles`):
 ```
-run hack/deploy_worker.js worker_automatic.js home n00dles 30
+run common/deploy_worker.js /hack/worker_automatic.js home n00dles 30
 ```
 
 Note: You may want to try running `worker_automatic_supporter.js` on some hosts targeting hackable servers to dedicate more threads to weakening/growing, which should improve income.

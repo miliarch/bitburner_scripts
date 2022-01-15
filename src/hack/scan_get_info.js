@@ -1,5 +1,6 @@
 /** @param {NS} ns **/
-import {findHostsRecursive, hostReport} from 'common/lib.js';
+import { findHostsRecursive } from '/common/lib.js';
+import { hostReport } from '/hack/lib.js';
 export async function main(ns) {
     var target = ns.args[0] ? ns.args[0] : 'home';
     var depth = ns.args[1] ? ns.args[1] : 1;

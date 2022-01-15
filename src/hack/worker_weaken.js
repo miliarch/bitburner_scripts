@@ -1,5 +1,6 @@
 /** @param {NS} ns **/
-import {weakenTarget, writeMessageToPort} from '/common/lib.js';
+import { writeMessageToPort } from '/common/lib.js';
+import { weakenTarget } from '/hack/lib.js';
 export async function main(ns) {
     // Single operation weakener
     var target = ns.args[0];

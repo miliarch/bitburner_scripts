@@ -15,5 +15,5 @@
     "acceptable_hack_fail_ratio": 0.75,
     "failed_hack_ignore_threshold": 25,
     "focals": ["n00dles", "phantasy"],
-    "dependent_scripts": ["/common/lib.js", "/config/operation_strings.txt"]
+    "dependent_scripts": ["/common/lib.js", "/hack/lib.js", "/config/operation_strings.txt"]
 }
