@@ -36,7 +36,7 @@ Configuration files.
 
 ### hack
 
-Hacking focused scripts. Learn more [here](doc/hack.md).
+Hacking focused scripts. Learn more [here](src/hack/README.md).
 
 ### gang
 
