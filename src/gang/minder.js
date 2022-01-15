@@ -1,5 +1,5 @@
 /** @param {NS} ns **/
-import * as lib from 'lib.js';
+import * as lib from '/common/lib.js';
 function roundHundreds(value) {
     return Math.round(value * 100) / 100;
 }
@@ -134,7 +134,7 @@ export async function main(ns) {
     ns.disableLog('sleep');
     // program constants
     const currentHost = ns.getServer();
-    const configFile = 'config_gang_vars.txt';
+    const configFile = '/config/gang.txt';
     const loopInterval = 1000;
     const configUpdateInterval = 60;
 

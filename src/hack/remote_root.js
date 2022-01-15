@@ -2,7 +2,7 @@
 * @param {NS} ns
 **/
 // Root specified server remotely
-import {playerPortOpeners} from 'lib.js';
+import {playerPortOpeners} from '/common/lib.js';
 export async function main(ns) {
     var target = ns.args[0];
     var portOpeners = playerPortOpeners(ns);

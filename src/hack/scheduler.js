@@ -1,5 +1,5 @@
 /** @param {NS} ns **/
-import * as lib from 'lib.js';
+import * as lib from '/common/lib.js';
 
 export async function main(ns) {
     // arguments
@@ -12,7 +12,7 @@ export async function main(ns) {
 
     // program constants
     const currentHost = ns.getServer();
-    const configFile = 'config_hack_vars.txt';
+    const configFile = '/config/hack.txt';
     const loopInterval = 1000;
     const configUpdateInterval = 60;
 
@@ -45,7 +45,7 @@ export async function main(ns) {
         const reporterFile = config['reporter_file'];
         const acceptableHackFailRatio = config['acceptable_hack_fail_ratio'];
         const failedHackIgnoreThreshold = config['failed_hack_ignore_threshold'];
-        const hackReporterPort = (reportPort == 0) ? config['hack_reporter_port'] : reportPort;
+        const hackReporterPort = (reportPort == 0) ? config['reporter_port'] : reportPort;
         const focals = config['focals']; // list of servers to prioritize (e.g.: ["n00dles","iron_gym"])
         const hackScriptCost = ns.getScriptRam(hackScript, 'home');
         const growScriptCost = ns.getScriptRam(growScript, 'home');

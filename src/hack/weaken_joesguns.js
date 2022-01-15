@@ -1,5 +1,5 @@
 /** @param {NS} ns **/
-import * as lib from 'lib.js';
+import * as lib from '/common/lib.js';
 
 export async function main(ns) {
     // arguments
@@ -11,7 +11,7 @@ export async function main(ns) {
 
     // program constants
     const currentHost = ns.getServer();
-    const configFile = 'config_hack_vars.txt';
+    const configFile = '/config/hack.txt';
     const loopInterval = 1000;
     const configUpdateInterval = 60;
 
@@ -33,7 +33,7 @@ export async function main(ns) {
         const homeReservedRam = config['home_reserved_ram'];
         const reporterScript = config['reporter_script'];
         const reporterFile = config['reporter_file'];
-        const hackReporterPort = (reportPort == 0) ? config['hack_reporter_port'] : reportPort;
+        const hackReporterPort = (reportPort == 0) ? config['reporter_port'] : reportPort;
         const weakenScriptCost = ns.getScriptRam(weakenScript, 'home');
 
         // ensure reporter is live if enabled

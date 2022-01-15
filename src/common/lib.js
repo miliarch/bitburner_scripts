@@ -311,7 +311,7 @@ export function importJSON(ns, filename) {
 }
 
 export function outputMessage(ns, result, expected, prepend, operation, extra) {
-    let messaging = importJSON(ns, 'operation_strings.txt')[operation]
+    let messaging = importJSON(ns, '/config/operation_strings.txt')[operation]
     var out_str = `${prepend}: `
     if (result == expected) {
         out_str += `${messaging['success']['value']}`

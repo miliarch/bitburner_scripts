@@ -5,7 +5,7 @@ export async function main(ns) {
     const listenPortNum = 1;
     const monitorInterval = 100;
     const saveInterval = 600;  // number of monitorInterval ms loops between save actions (600 = 60 seconds)
-    const saveFile = 'hack_report.txt'
+    const saveFile = '/reports/hack.txt'
     var listenPort = ns.getPortHandle(listenPortNum)
 
     // data variables
