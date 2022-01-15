@@ -241,7 +241,7 @@ export async function evaluateAndPlace(ns, host, target, port=0) {
 export async function checkRootHost(ns, target) {
     // make sure target is rooted
     if (!target.hasAdminRights) {
-        ns.exec('remote_root.js', 'home', 1, target.hostname);
+        ns.exec('/hack/remote_root.js', 'home', 1, target.hostname);
         while (!ns.hasRootAccess(target.hostname)) {
             await ns.sleep(50);
         }
