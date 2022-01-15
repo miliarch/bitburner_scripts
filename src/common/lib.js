@@ -4,6 +4,10 @@ export async function main(ns) {
     ns.tprint('use me right, buddy')
 }
 
+// ##########################################################
+// ### General data manipulation and formatting functions ###
+// ##########################################################
+
 export function roundHundreds(val) {
     // TODO: Better to use ns.nFormat(value, 0.00) in presentation code; function needs cleanup
     return Math.round(val * 100) / 100;
@@ -18,14 +22,6 @@ export function calcPercentage(val1, val2) {
     return roundHundreds((val1 / val2)  * 100);
 }
 
-export function calcUsedRamFromThreadsArgs(threadsArgs, scriptCost) {
-    var usedRam = 0
-    for (let p of threadsArgs) {
-        usedRam += p[0] * scriptCost;
-    }
-    return usedRam
-}
-
 export function formatMoney(val) {
     // TODO: Better to use ns.nFormat(value, 0.00a) in presentation code; function needs cleanup
     return Number(val).toLocaleString();
@@ -35,102 +31,94 @@ export function formatSeconds(val) {
     return roundHundreds(val / 1000);
 }
 
-export function freeRam(server) {
-    // Return free ram on server object
-    return server.maxRam - server.ramUsed;
-}
-
-export function getTotalFreeRam(hosts) {
-    var totalFreeRam = 0;
-    for (let host of hosts) {
-        totalFreeRam += host.freeRam;
+export function sanitizeScriptNameArgument(scriptName) {
+    // crutch for people like me who just can't remember to pass script name argument with a forward slash
+    if (scriptName.includes('/') && !scriptName.startsWith('/')) {
+        scriptName = `/${scriptName}`;
     }
-    return totalFreeRam
+    return scriptName
 }
 
-export function getTotalRam(hosts) {
-    var totalRam = 0;
-    for (let host of hosts) {
-        totalRam += host.maxRam;
-    }
-    return totalRam
-}
 
-export function getThreadsArgsForScriptName(hosts, scriptName) {
-    // Check and return threads of scriptName running on given hosts as well as arguments
-    var threadsArgs = []
-    for (var host of hosts) {
-        for (let p of host.processes) {
-            if (p.filename == scriptName) {
-                // e.g.: [1, 'n00dles', 0]
-                threadsArgs.push([p.threads].concat(p.args));
-            }
+// ######################################
+// ### Miscellaneous helper functions ###
+// ######################################
+
+export function importJSON(ns, filename) {
+    let fileExists = ns.fileExists(filename, 'home')
+    var failString = `Failed to import JSON from ${filename}: `
+    if (fileExists) {
+        let data = JSON.parse(ns.read(filename));
+        if (data) {
+            return data;
+            toastPrint(ns, `Imported JSON from ${filename}`, 'success');
+        } else {
+            toastPrint(ns, `${failString}: parse result null`, 'error', true, true)
+            return false;
         }
-    }
-    return threadsArgs;
-}
-
-export function findHostsRecursive(ns, target, depth=1, exclusions=[], seen=[]) {
-    // Return list of unique hosts from given target to given depth with given hostname exclusions
-    ns.disableLog('ALL');
-    var servers = ns.scan(target).filter(function(i) { return !exclusions.includes(i); });  // Scan target; remove exclusion servers
-    for (var server of servers) {
-        var pushCount = 0
-        if (!seen.includes(server)) {
-            // server is new to this find
-            seen.push(server);
-            pushCount += 1;
-        }
-        if ((depth > 0) && pushCount > 0) {
-            seen = findHostsRecursive(ns, server, depth - 1, exclusions, seen);
-        }
-    }
-    return seen
-}
-
-export function calcAvailableThreads(freeRam, ramCost) {
-    return Math.floor(freeRam / ramCost);
-}
-
-
-export function generateUniqueProcessArgs(ns, args, processes) {
-    // Increment second argument (integer), assuming target hostname as first member
-    var uniqueArgs = args;
-    var done = false;
-    var seen = []
-    if (processes) {
-        for (var p of processes) {
-            if (uniqueArgs[0] == p.args[0]) {
-                seen.push(p.args[1]);
-            }
-        }
-        seen = seen.sort((a, b) => (a > b) ? 1 : -1)  // sort ascending
-        for (let i of seen) {
-            uniqueArgs[1] = (uniqueArgs[1] == i) ? uniqueArgs[1] += 1 : uniqueArgs[1];
-        }
-    }
-    return uniqueArgs;
-}
-
-export function placeWorker(ns, host, target, threads, port=0) {
-    // deploy script on host toward target
-    var args = []
-    if (port > 0) {
-        args = generateUniqueProcessArgs(ns, [target.hostname, 0, port], host.processes);
+        return data;
     } else {
-        args = generateUniqueProcessArgs(ns, [target.hostname, 0], host.processes);
+        toastPrint(ns, `${failString}: file does not exist`, 'error', true, true);
+        return false;
     }
-    let success = ns.exec(target.script, host.hostname, threads, ...args);
-    var out_str = ''
-    if (success) {
-        out_str = `${host.hostname}: ran ${target.script} ${threads} [${args}]`
-    } else {
-        out_str = `${host.hostname}: failed to run ${target.script} ${threads} [${args}]`;
-        ns.toast(out_str, 'warning');
-    }
-    ns.print(out_str);
+}
 
-    return success
+export function outputMessage(ns, result, expected, prepend, operation, extra) {
+    let messaging = importJSON(ns, '/config/operation_strings.txt')[operation]
+    var out_str = `${prepend}: `
+    if (result == expected) {
+        out_str += `${messaging['success']['value']}`
+        if (extra && extra.hasOwnProperty('success')) {
+            out_str += ` (${extra['success']})`;
+        }
+        toastPrint(ns, out_str, messaging['success']['type'], messaging['success']['print'], messaging['success']['tprint'], messaging['success']['toast'])
+    } else {
+        out_str += `${messaging['fail']['value']}`
+        if (extra && extra.hasOwnProperty('fail')) {
+            out_str += ` (${extra['fail']})`;
+        }
+        toastPrint(ns, out_str, messaging['fail']['type'], messaging['fail']['print'], messaging['fail']['tprint'], messaging['fail']['toast'])
+    }
+    return out_str
+}
+
+export function toastPrint(ns, out_str, variant, print=true, tprint=false, toast=true) {
+    if (toast) {
+        ns.toast(out_str, variant)
+    }
+    if (print) {
+        ns.print(`${variant}: ${out_str}`)
+    }
+    if (tprint) {
+        ns.tprint(`${variant}: ${out_str}`)
+    }
+}
+
+export async function writeMessageToPort(ns, port, message, blocking=true) {
+    if (blocking) {
+        while (!port.tryWrite(JSON.stringify(message))) {
+            await ns.sleep(1000)
+        }
+    } else {
+        port.tryWrite(JSON.stringify(message))
+    }
+}
+
+
+// ###############################################
+// ### Script and process management functions ###
+// ###############################################
+
+export async function checkCopyScripts(ns, host, target) {
+    // make sure file exists on target host
+    const operation = 'check_copy_scripts'
+    for (let script of [target.script].concat(target.dependentScripts)) {
+        var extra = {}
+        extra['success'] = `${script} ${target.hostname}`;
+        extra['fail'] = `${script} ${target.hostname}`;
+        let success = await ns.scp(script, 'home', host.hostname);
+        outputMessage(ns, success, true, operation, operation, extra);
+    }
 }
 
 export async function evaluateAndPlace(ns, host, target, port=0) {
@@ -154,51 +142,23 @@ export async function evaluateAndPlace(ns, host, target, port=0) {
     return 0;
 }
 
-export async function checkCopyScripts(ns, host, target) {
-    // make sure file exists on target host
-    const operation = 'check_copy_scripts'
-    for (let script of [target.script].concat(target.dependentScripts)) {
-        var extra = {}
-        extra['success'] = `${script} ${target.hostname}`;
-        extra['fail'] = `${script} ${target.hostname}`;
-        let success = await ns.scp(script, 'home', host.hostname);
-        outputMessage(ns, success, true, operation, operation, extra);
-    }
-}
-
-export function presentPurchaseServerOptions(ns) {
-    var costPerGB = ns.getPurchasedServerCost(1);
-    var out_str = ''
-    out_str += `Server cost is \$${ns.nFormat(costPerGB, '0.00a')} per GB\n`;
-    out_str += `Options:\n`
-    for (let i = 1; i <= 20 ; i++) {
-        let ram = Math.pow(2, i);
-        let cost = ns.getPurchasedServerCost(ram);
-        out_str += `${formatPurchaseServerOption(ns, i, ram, cost)}`;
-        if (i != 20) {
-            out_str += `\n`;
+export function generateUniqueProcessArgs(ns, args, processes) {
+    // Increment second argument (integer), assuming target hostname as first member
+    var uniqueArgs = args;
+    var done = false;
+    var seen = []
+    if (processes) {
+        for (var p of processes) {
+            if (uniqueArgs[0] == p.args[0]) {
+                seen.push(p.args[1]);
+            }
+        }
+        seen = seen.sort((a, b) => (a > b) ? 1 : -1)  // sort ascending
+        for (let i of seen) {
+            uniqueArgs[1] = (uniqueArgs[1] == i) ? uniqueArgs[1] += 1 : uniqueArgs[1];
         }
     }
-    return out_str
-}
-
-export function importJSON(ns, filename) {
-    let fileExists = ns.fileExists(filename, 'home')
-    var failString = `Failed to import JSON from ${filename}: `
-    if (fileExists) {
-        let data = JSON.parse(ns.read(filename));
-        if (data) {
-            return data;
-            toastPrint(ns, `Imported JSON from ${filename}`, 'success');
-        } else {
-            toastPrint(ns, `${failString}: parse result null`, 'error', true, true)
-            return false;
-        }
-        return data;
-    } else {
-        toastPrint(ns, `${failString}: file does not exist`, 'error', true, true);
-        return false;
-    }
+    return uniqueArgs;
 }
 
 export function killAllProcessesOnTarget(ns, hostname) {
@@ -217,6 +177,106 @@ export function killAllProcessesOnTarget(ns, hostname) {
     return result;
 }
 
+export function placeWorker(ns, host, target, threads, port=0) {
+    // deploy script on host toward target
+    var args = []
+    if (port > 0) {
+        args = generateUniqueProcessArgs(ns, [target.hostname, 0, port], host.processes);
+    } else {
+        args = generateUniqueProcessArgs(ns, [target.hostname, 0], host.processes);
+    }
+    let success = ns.exec(target.script, host.hostname, threads, ...args);
+    var out_str = ''
+    if (success) {
+        out_str = `${host.hostname}: ran ${target.script} ${threads} [${args}]`
+    } else {
+        out_str = `${host.hostname}: failed to run ${target.script} ${threads} [${args}]`;
+        ns.toast(out_str, 'warning');
+    }
+    ns.print(out_str);
+
+    return success
+}
+
+// ################################
+// ### Host discovery functions ###
+// ################################
+
+export function findHostsRecursive(ns, target, depth=1, exclusions=[], seen=[]) {
+    // Return list of unique hosts from given target to given depth with given hostname exclusions
+    ns.disableLog('ALL');
+    var servers = ns.scan(target).filter(function(i) { return !exclusions.includes(i); });  // Scan target; remove exclusion servers
+    for (var server of servers) {
+        var pushCount = 0
+        if (!seen.includes(server)) {
+            // server is new to this find
+            seen.push(server);
+            pushCount += 1;
+        }
+        if ((depth > 0) && pushCount > 0) {
+            seen = findHostsRecursive(ns, server, depth - 1, exclusions, seen);
+        }
+    }
+    return seen
+}
+
+
+// ####################################
+// ### Server information functions ###
+// ####################################
+
+export function calcAvailableThreads(freeRam, ramCost) {
+    return Math.floor(freeRam / ramCost);
+}
+
+export function calcFreeRam(server) {
+    // Return free ram on server object
+    return server.maxRam - server.ramUsed;
+}
+
+export function calcUsedRamFromThreadsArgs(threadsArgs, scriptCost) {
+    var usedRam = 0
+    for (let item of threadsArgs) {
+        usedRam += item[0] * scriptCost;
+    }
+    return usedRam
+}
+
+export function calcTotalFreeRam(servers) {
+    var totalFreeRam = 0;
+    for (let server of servers) {
+        totalFreeRam += server.freeRam;
+    }
+    return totalFreeRam
+}
+
+export function calcTotalRam(servers) {
+    var totalRam = 0;
+    for (let server of servers) {
+        totalRam += server.maxRam;
+    }
+    return totalRam
+}
+
+export function getThreadsArgsForScriptName(servers, scriptName) {
+    // Check and return threads of scriptName running on given servers as well as arguments
+    var threadsArgs = []
+    for (var server of servers) {
+        for (let p of server.processes) {
+            if (p.filename == scriptName) {
+                // e.g.: [threads, args[0], args[1]] -> [2, 'n00dles', 0]
+                threadsArgs.push([p.threads].concat(p.args));
+            }
+        }
+    }
+    return threadsArgs;
+}
+
+
+// #########################################
+// ### Owned server management functions ###
+// #########################################
+
 export function deleteServer(ns, hostname) {
     const operation = 'delete_server';
     var result;
@@ -230,6 +290,33 @@ export function deleteServer(ns, hostname) {
         result = outputMessage(ns, hostname, false, operation, operation, extra);
     }
     return result;
+}
+
+export function formatPurchaseServerOption(ns, option, ram, cost) {
+    var out_str = '\t'
+    if (option < 10) {
+        out_str += ` ${option}: `
+    } else {
+        out_str += `${option}: `
+    }
+    out_str += `\t${ns.nFormat(ram * Math.pow(1024, 3), '0 ib')}   \t\$${ns.nFormat(cost, '0.00a')}`;
+    return out_str
+}
+
+export function presentPurchaseServerOptions(ns) {
+    var costPerGB = ns.getPurchasedServerCost(1);
+    var out_str = ''
+    out_str += `Server cost is \$${ns.nFormat(costPerGB, '0.00a')} per GB\n`;
+    out_str += `Options:\n`
+    for (let i = 1; i <= 20 ; i++) {
+        let ram = Math.pow(2, i);
+        let cost = ns.getPurchasedServerCost(ram);
+        out_str += `${formatPurchaseServerOption(ns, i, ram, cost)}`;
+        if (i != 20) {
+            out_str += `\n`;
+        }
+    }
+    return out_str
 }
 
 export function purchaseServer(ns, hostname, ram) {
@@ -253,66 +340,4 @@ export function purchaseServer(ns, hostname, ram) {
         result = outputMessage(ns, false, true, hostname, operation, extra);
     }
     return result;
-}
-
-export function formatPurchaseServerOption(ns, option, ram, cost) {
-    var out_str = '\t'
-    if (option < 10) {
-        out_str += ` ${option}: `
-    } else {
-        out_str += `${option}: `
-    }
-    out_str += `\t${ns.nFormat(ram * Math.pow(1024, 3), '0 ib')}   \t\$${ns.nFormat(cost, '0.00a')}`;
-    return out_str
-}
-
-
-
-export function outputMessage(ns, result, expected, prepend, operation, extra) {
-    let messaging = importJSON(ns, '/config/operation_strings.txt')[operation]
-    var out_str = `${prepend}: `
-    if (result == expected) {
-        out_str += `${messaging['success']['value']}`
-        if (extra && extra.hasOwnProperty('success')) {
-            out_str += ` (${extra['success']})`;
-        }
-        toastPrint(ns, out_str, messaging['success']['type'], messaging['success']['print'], messaging['success']['tprint'], messaging['success']['toast'])
-    } else {
-        out_str += `${messaging['fail']['value']}`
-        if (extra && extra.hasOwnProperty('fail')) {
-            out_str += ` (${extra['fail']})`;
-        }
-        toastPrint(ns, out_str, messaging['fail']['type'], messaging['fail']['print'], messaging['fail']['tprint'], messaging['fail']['toast'])
-    }
-    return out_str
-}
-
-export function sanitizeScriptNameArgument(scriptName) {
-    // crutch for people like me who just can't remember to pass script name with a forward slash when passing as an argument
-    if (scriptName.includes('/') && !scriptName.startsWith('/')) {
-        scriptName = `/${scriptName}`;
-    }
-    return scriptName
-}
-
-export function toastPrint(ns, out_str, variant, print=true, tprint=false, toast=true) {
-    if (toast) {
-        ns.toast(out_str, variant)
-    }
-    if (print) {
-        ns.print(`${variant}: ${out_str}`)
-    }
-    if (tprint) {
-        ns.tprint(`${variant}: ${out_str}`)
-    }
-}
-
-export async function writeMessageToPort(ns, port, message, blocking=true) {
-    if (blocking) {
-        while (!port.tryWrite(JSON.stringify(message))) {
-            await ns.sleep(1000)
-        }
-    } else {
-        port.tryWrite(JSON.stringify(message))
-    }
 }

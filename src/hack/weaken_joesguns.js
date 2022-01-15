@@ -1,6 +1,6 @@
 /** @param {NS} ns **/
-import { importJSON, findHostsRecursive, freeRam,
-         getTotalFreeRam, getTotalRam, evaluateAndPlace } from '/common/lib.js';
+import { importJSON, findHostsRecursive, calcFreeRam,
+         calcTotalFreeRam, calcTotalRam, evaluateAndPlace } from '/common/lib.js';
 import { canHack, canRoot, checkRootHost } from '/hack/lib.js';
 
 export async function main(ns) {
@@ -72,7 +72,7 @@ export async function main(ns) {
             server.dependentScripts = dependentScripts;
             server.canHack = canHack(ns, server);
             server.canRoot = canRoot(ns, server);
-            server.freeRam = (server.hostname == 'home') ? freeRam(server) - homeReservedRam : freeRam(server);
+            server.freeRam = (server.hostname == 'home') ? calcFreeRam(server) - homeReservedRam : calcFreeRam(server);
 
             // Perform some analysis and categorize server in appropriate bins
             if (server.hasAdminRights || server.canRoot) {
@@ -96,8 +96,8 @@ export async function main(ns) {
         }
 
         // identify total resource capacity
-        var totalFreeRam = getTotalFreeRam(scriptHosts);
-        var totalRam = getTotalRam(scriptHosts);
+        var totalFreeRam = calcTotalFreeRam(scriptHosts);
+        var totalRam = calcTotalRam(scriptHosts);
 
         // general placement logic
         for (var target of weakenTargets) {

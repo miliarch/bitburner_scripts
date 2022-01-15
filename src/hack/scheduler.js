@@ -1,5 +1,5 @@
 /** @param {NS} ns **/
-import { importJSON, findHostsRecursive, freeRam, getTotalFreeRam, getTotalRam,
+import { importJSON, findHostsRecursive, calcFreeRam, calcTotalFreeRam, calcTotalRam,
          getThreadsArgsForScriptName, calcUsedRamFromThreadsArgs } from '/common/lib.js';
 import { canHack, canRoot, checkRootHost, estimateHackThreads, getIdealGrowthThreads,
          removeImpossibleHackTargets, processScriptBatch } from '/hack/lib.js';
@@ -93,7 +93,7 @@ export async function main(ns) {
             server.dependentScripts = dependentScripts;
             server.canHack = canHack(ns, server);
             server.canRoot = canRoot(ns, server);
-            server.freeRam = (server.hostname == 'home') ? freeRam(server) - homeReservedRam : freeRam(server);
+            server.freeRam = (server.hostname == 'home') ? calcFreeRam(server) - homeReservedRam : calcFreeRam(server);
             server.moneyThreshold = server.moneyMax * moneyThresholdMultiplier;
             server.securityThreshold = server.minDifficulty + securityModifier;
             server.securityDifference = server.hackDifficulty - server.securityThreshold;
@@ -174,8 +174,8 @@ export async function main(ns) {
         growTargets = growTargets.sort((a, b) => (a.idealThreadRatio / a.idealAmountRatio > b.idealThreadRatio / b.idealAmountRatio) ? -1 : 1);
 
         // identify total resource capacity
-        var totalFreeRam = getTotalFreeRam(scriptHosts);
-        var totalRam = getTotalRam(scriptHosts);
+        var totalFreeRam = calcTotalFreeRam(scriptHosts);
+        var totalRam = calcTotalRam(scriptHosts);
 
         // process threads:target collections
         var hackProcesses = getThreadsArgsForScriptName(scriptHosts, hackScript);
