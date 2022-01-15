@@ -131,6 +131,7 @@ function updateTaskForMembers(ns, members, taskName, minHackingLevel) {
 }
 
 export async function main(ns) {
+    ns.disableLog('sleep');
     // program constants
     const currentHost = ns.getServer();
     const configFile = 'config_gang_vars.txt';
@@ -191,7 +192,7 @@ export async function main(ns) {
             // Check up on gang stats to identify focus areas
             var wantedLevelOver = gang.wantedLevel >= gang.maxWantedThreshold;
             var wantedLevelUnder = gang.wantedLevel <= gang.minWantedThreshold;
-            var wantedPenaltyOver = ((1 - gang.wantedPenalty) * 100) > gang.maxWantedPenaltyPercent
+            var wantedPenaltyOver = (1 - gang.wantedPenalty) > gang.maxWantedPenaltyPercent
 
             // Check up on members to identify current efforts
 
