@@ -3,7 +3,7 @@ export async function main(ns) {
     ns.tail()
     // handle input
     let flags = ns.flags([
-        ['url_root', 'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master'],
+        ['url_root', 'https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/src'],
         ['hostname', 'home'],
         ['remove', false],
         ['rm', false],
