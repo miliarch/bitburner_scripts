@@ -131,9 +131,9 @@ export async function evaluateAndPlace(ns, host, target, port=0) {
         await checkCopyScripts(ns, host, target);
         var success = false;
         if (port > 0) {
-            success = await placeWorker(ns, host, target, placedThreads, port);
+            success = placeWorker(ns, host, target, placedThreads, port);
         } else {
-            success = await placeWorker(ns, host, target, placedThreads);
+            success = placeWorker(ns, host, target, placedThreads);
         }
         if (success) {
             return placedThreads;
@@ -185,17 +185,16 @@ export function placeWorker(ns, host, target, threads, port=0) {
     } else {
         args = generateUniqueProcessArgs(ns, [target.hostname, 0], host.processes);
     }
-    let success = ns.exec(target.script, host.hostname, threads, ...args);
-    var out_str = ''
-    if (success) {
-        out_str = `${host.hostname}: ran ${target.script} ${threads} [${args}]`
-    } else {
-        out_str = `${host.hostname}: failed to run ${target.script} ${threads} [${args}]`;
-        ns.toast(out_str, 'warning');
-    }
-    ns.print(out_str);
 
-    return success
+    const operation = 'place_worker';
+    var extra = {};
+    extra['success'] = `${target.script} ${threads} [${args}]`;
+    extra['fail'] = `${target.script} ${threads} [${args}]`;
+    let prepend = `${operation}: ${host.hostname}`
+    let success = ns.exec(target.script, host.hostname, threads, ...args);
+    let result = outputMessage(ns, success != 0, true, prepend, operation, extra);
+
+    return result
 }
 
 // ################################

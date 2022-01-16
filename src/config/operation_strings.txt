@@ -31,6 +31,22 @@
       "value": "killed all processes"
     }
   },
+  "place_worker": {
+    "fail": {
+      "toast": false,
+      "print": true,
+      "tprint": false,
+      "type": "warning",
+      "value": "could not run worker"
+    },
+    "success": {
+      "toast": false,
+      "print": true,
+      "tprint": false,
+      "type": "success",
+      "value": "ran worker"
+    }
+  },
   "purchase_server": {
     "fail": {
       "toast": true,
