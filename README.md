@@ -24,7 +24,7 @@ run common/fetch_all.js --url_root http://localhost:3000
 ```
 
 All supported arguments:
-* `--url_root`: Takes the value of the passed string - determines which URL is prepended to filenames when fetching remote files ([default: https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/src](src/common/fetch_all.js#l6))
+* `--url_root`: Takes the value of the passed string - determines which URL is prepended to filenames when fetching remote files ([default: https://raw.githubusercontent.com/miliarch/bitburner_scripts/master/src](src/common/fetch_all.js#L6))
 * `--remove` or `--rm`: True if passed, false otherwise - determines whether files are removed before they are fetched
 * `--host HOSTNAME`: Takes the value of the passed string - determines which host to act against
 
