@@ -8,34 +8,6 @@ These scripts both have very low requirements for usage, and fit in the category
 
 Each script in this section contains some amount of commentary about what the code is doing when logic isn't obvious, and almost all depend on each other to successfully execute. Start with workers, move on to deployment, then scanning, and make sure all dependent scripts are available. You'll be fine.
 
-## Dependency map
-
-Required relationships between scripts:
-
-```
-common/get_info.js
-└── common/lib.js (import: hostReport)
-
-common/lib.js
-└── hack/remote_root.js (script instance: statically defined in checkRootHost)
-
-hack/scheduler.js
-├── common/lib.js (import: all as lib)
-│   └── hack/remote_root.js (script instance: statically defined in checkRootHost)
-├── hack/hack/reporter.py (script instance: defined in constants)
-├── hack/worker_hack.js (script instance: defined in constants)
-├── hack/worker_grow.js (script instance: defined in constants)
-└── hack/worker_weaken.js (script instance: defined in constants)
-
-hackremote_root.js
-└── common/lib.js (import: playerPortOpeners)
-
-common/scan_get_info.js
-└── common/lib.js (import: findHostsRecursive, hostReport)
-```
-
-If the script is not listed, it can run standalone without error, though may still require an arbitrary (but existing) script name to be passed as an argument at runtime.
-
 ## Examples
 
 ### Root server
