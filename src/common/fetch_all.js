@@ -33,9 +33,11 @@ export async function main(ns) {
         'common/lib.js',
         'common/fetch_all.js',
         'gang/minder.js',
+        'gang/lib.js',
         'hacknet/minder.js',
         'singularity/crime_infos.js',
         'singularity/crime_loop.js',
+        'singularity/lib.js',
     ]
     
     // compile urls
