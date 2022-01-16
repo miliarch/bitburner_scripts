@@ -46,17 +46,16 @@ export function sanitizeScriptNameArgument(scriptName) {
 
 export function importJSON(ns, filename) {
     let fileExists = ns.fileExists(filename, 'home')
-    var failString = `Failed to import JSON from ${filename}: `
+    var failString = `Failed to import JSON from ${filename}`
     if (fileExists) {
         let data = JSON.parse(ns.read(filename));
         if (data) {
-            return data;
             toastPrint(ns, `Imported JSON from ${filename}`, 'success');
+            return data;
         } else {
             toastPrint(ns, `${failString}: parse result null`, 'error', true, true)
             return false;
         }
-        return data;
     } else {
         toastPrint(ns, `${failString}: file does not exist`, 'error', true, true);
         return false;
