@@ -50,7 +50,7 @@ export function importJSON(ns, filename) {
     if (fileExists) {
         let data = JSON.parse(ns.read(filename));
         if (data) {
-            toastPrint(ns, `Imported JSON from ${filename}`, 'success');
+            toastPrint(ns, `Imported JSON from ${filename}`, 'info');
             return data;
         } else {
             toastPrint(ns, `${failString}: parse result null`, 'error', true, true)
