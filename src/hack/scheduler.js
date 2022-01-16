@@ -1,7 +1,7 @@
 /** @param {NS} ns **/
 import { importJSON, findHostsRecursive, calcFreeRam, calcTotalFreeRam, calcTotalRam,
          getThreadsArgsForScriptName, calcUsedRamFromThreadsArgs } from '/common/lib.js';
-import { canHack, canRoot, checkRootHost, estimateHackThreads, getIdealGrowthThreads,
+import { canHack, canRoot, checkRootServer, calcIdealHackThreads, calcIdealGrowThreads,
          removeImpossibleHackTargets, processScriptBatch } from '/hack/lib.js';
 
 export async function main(ns) {
@@ -97,17 +97,17 @@ export async function main(ns) {
             server.moneyThreshold = server.moneyMax * moneyThresholdMultiplier;
             server.securityThreshold = server.minDifficulty + securityModifier;
             server.securityDifference = server.hackDifficulty - server.securityThreshold;
-            server.idealHackThreads = estimateHackThreads(ns, server.hostname, server.moneyAvailable * moneyMaxHackAmountMultiplier);
+            server.idealHackThreads = calcIdealHackThreads(ns, server.hostname, server.moneyAvailable * moneyMaxHackAmountMultiplier);
             server.actualHackAmount = (ns.hackAnalyze(server.hostname) * server.moneyAvailable) * server.idealHackThreads;
             server.potentialHackAmount = (ns.hackAnalyze(server.hostname) * server.moneyMax) * server.idealHackThreads;
-            server.idealGrowthThreads = getIdealGrowthThreads(ns, server.cpuCores, server.hostname, growthMultiplier);
+            server.idealGrowthThreads = calcIdealGrowThreads(ns, server.cpuCores, server.hostname, growthMultiplier);
             server.idealThreadRatio = server.idealHackThreads / server.idealGrowthThreads;
             server.idealAmountRatio = server.actualHackAmount / server.potentialHackAmount;
 
             // Perform some analysis and categorize server in appropriate bins
             if (server.hasAdminRights || server.canRoot) {
                 // Admin rights are available, or root can be performed
-                await checkRootHost(ns, server);
+                await checkRootServer(ns, server);
                 if (server.maxRam > 0) {
                     // server can run things, it's a scriptHost
                     scriptHosts.push(server);

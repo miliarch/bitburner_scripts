@@ -2,15 +2,10 @@
 // Hacking specific function library
 import { evaluateAndPlace, formatSeconds, outputMessage } from '/common/lib.js';
 
-export function calcRemainingWeakenThreads(ns, host, target) {
-    var threads = 0;
-    var weakenAmount = ns.weakenAnalyze(threads, host.cpuCores);
-    while (weakenAmount < target.securityDifference) {
-        threads += 1;
-        weakenAmount = ns.weakenAnalyze(threads, host.cpuCores);
-    }
-    return threads;
-}
+
+// ####################################
+// ### Player information functions ###
+// ####################################
 
 export function canHack(ns, server) {
     // Check whether provided server object can be hacked
@@ -22,11 +17,88 @@ export function canRoot(ns, server) {
     return playerPortOpeners(ns).length >= (server.numOpenPortsRequired - server.openPortCount);
 }
 
-export async function checkRootHost(ns, target) {
-    // make sure target is rooted
-    if (!target.hasAdminRights) {
-        ns.exec('/hack/remote_root.js', 'home', 1, target.hostname);
-        while (!ns.hasRootAccess(target.hostname)) {
+
+export function playerPortOpeners(ns) {
+    // Return list of port openers available to the player
+    var portOpeners = [];
+    if (ns.fileExists("BruteSSH.exe", "home")) {
+        portOpeners.push('brutessh');
+    }
+    if (ns.fileExists("FTPCrack.exe", "home")) {
+        portOpeners.push('ftpcrack');
+    }
+    if (ns.fileExists("relaySMTP.exe", "home")) {
+        portOpeners.push('relaysmtp');
+    }
+    if (ns.fileExists("HTTPWorm.exe", "home")) {
+        portOpeners.push('httpworm');
+    }
+    if (ns.fileExists("SQLInject.exe", "home")) {
+        portOpeners.push('sqlinject');
+    }
+    return portOpeners
+}
+
+
+// ####################################
+// ### Target information functions ###
+// ####################################
+
+export function calcIdealGrowThreads(ns, cores, target, multiplier) {
+    // calculate ideal count of grow threads to reach desired grow multiplier
+    return Math.ceil(ns.growthAnalyze(target, multiplier, cores));
+}
+
+export function calcIdealHackThreads(ns, target, amount) {
+    // calculate ideal count of hack threads to reach desired money amount
+    return Math.ceil(ns.hackAnalyzeThreads(target, amount));
+}
+
+export function calcIdealWeakenThreads(ns, host, target) {
+    // calculate ideal count of weaken threads to reduce to desired security threshold
+    var threads = 0;
+    var weakenAmount = ns.weakenAnalyze(threads, host.cpuCores);
+    while (weakenAmount < target.securityDifference) {
+        threads += 1;
+        weakenAmount = ns.weakenAnalyze(threads, host.cpuCores);
+    }
+    return threads;
+}
+
+
+// ###########################
+// ### Filtering functions ###
+// ###########################
+
+export function removeImpossibleHackTargets(targets, stats, failedHackIgnoreThreshold, acceptableHackFailRatio) {
+    // remove hack targets that are impossible from array - impossible based on historic hack stats weighed against player defined failure threshold
+    if (stats && targets.length > 0) {
+        for (var i = targets.length - 1; i >= 0; i--) {
+            var target = targets[i];
+            if (stats.hasOwnProperty(target.hostname) && stats[target.hostname].hasOwnProperty('hack')) {
+                let totalCount = stats[target.hostname]['hack']['count'];
+                let failCount = stats[target.hostname]['hack']['fail_count'];
+                let candidate = (totalCount > failedHackIgnoreThreshold);
+                let exclude = (candidate && failCount >= totalCount * acceptableHackFailRatio);
+                if (exclude) {
+                    targets.splice(i, 1);
+                }
+            }
+        }
+    }
+    return targets
+}
+
+
+// ########################
+// ### Simple workflows ###
+// ########################
+
+export async function checkRootServer(ns, server) {
+    // make sure server is rooted
+    if (!server.hasAdminRights) {
+        ns.exec('/hack/remote_root.js', 'home', 1, server.hostname);
+        while (!ns.hasRootAccess(server.hostname)) {
             await ns.sleep(50);
         }
         let out_str = `Successfully rooted ${target.hostname}`;
@@ -35,18 +107,8 @@ export async function checkRootHost(ns, target) {
     }
 }
 
-export function getIdealGrowthThreads(ns, cores, target, multiplier) {
-    // Get ideal number of growth threads to reach desired growth multiplier
-    return Math.ceil(ns.growthAnalyze(target, multiplier, cores));
-}
-
-export function estimateHackThreads(ns, target, amount) {
-    // Estimate number of hack threads to reach desired money amount
-    return Math.ceil(ns.hackAnalyzeThreads(target, amount));
-}
-
 export async function growTarget(ns, hostname, threads=null) {
-    // Hack target system
+    // Grow target system
     const operation = 'grow_target';
     var result;
     var out_str;
@@ -104,7 +166,7 @@ export async function hackTarget(ns, hostname, threads=null) {
 }
 
 export async function weakenTarget(ns, hostname, threads=null) {
-    // Hack target system
+    // Weaken target system
     const operation = 'weaken_target';
     var result;
     var out_str;
@@ -130,13 +192,18 @@ export async function weakenTarget(ns, hostname, threads=null) {
     return result;
 }
 
+
+// #########################
+// ### Complex workflows ###
+// #########################
+
 export async function processScriptBatch(ns, targets, hosts, processes, totalFreeRam, ramLimit=false, listenPort=0) {
     for (var target of targets) {
         // sort hosts list by RAM available (prevent thread splitting as much as possible);
         hosts = hosts.sort((a, b) => (a.freeRam > b.freeRam) ? -1 : 1);
         for (var host of hosts) {
             if (target.scriptType == 'weaken') {
-                target.remainingThreads = calcRemainingWeakenThreads(ns, host, target);
+                target.remainingThreads = calcIdealWeakenThreads(ns, host, target);
                 target.securityDifference -= ns.weakenAnalyze(target.remainingThreads, host.cpuCores);
             }
 
@@ -166,44 +233,10 @@ export async function processScriptBatch(ns, targets, hosts, processes, totalFre
     return [totalFreeRam, ramLimit]
 }
 
-export function playerPortOpeners(ns) {
-    // Return list of port openers available to the player
-    var portOpeners = [];
-    if (ns.fileExists("BruteSSH.exe", "home")) {
-        portOpeners.push('brutessh');
-    }
-    if (ns.fileExists("FTPCrack.exe", "home")) {
-        portOpeners.push('ftpcrack');
-    }
-    if (ns.fileExists("relaySMTP.exe", "home")) {
-        portOpeners.push('relaysmtp');
-    }
-    if (ns.fileExists("HTTPWorm.exe", "home")) {
-        portOpeners.push('httpworm');
-    }
-    if (ns.fileExists("SQLInject.exe", "home")) {
-        portOpeners.push('sqlinject');
-    }
-    return portOpeners
-}
 
-export function removeImpossibleHackTargets(targets, stats, failedHackIgnoreThreshold, acceptableHackFailRatio) {
-    if (stats && targets.length > 0) {
-        for (var i = targets.length - 1; i >= 0; i--) {
-            var target = targets[i];
-            if (stats.hasOwnProperty(target.hostname) && stats[target.hostname].hasOwnProperty('hack')) {
-                let totalCount = stats[target.hostname]['hack']['count'];
-                let failCount = stats[target.hostname]['hack']['fail_count'];
-                let candidate = (totalCount > failedHackIgnoreThreshold);
-                let exclude = (candidate && failCount >= totalCount * acceptableHackFailRatio);
-                if (exclude) {
-                    targets.splice(i, 1);
-                }
-            }
-        }
-    }
-    return targets
-}
+// ###############
+// ### Reports ###
+// ###############
 
 export function hostReport(ns, target, moneyModifier=0.75, growthModifier=1.25, securityModifier=5) {
     // Report host status to console

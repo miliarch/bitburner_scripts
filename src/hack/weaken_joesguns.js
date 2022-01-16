@@ -1,7 +1,7 @@
 /** @param {NS} ns **/
 import { importJSON, findHostsRecursive, calcFreeRam,
          calcTotalFreeRam, calcTotalRam, evaluateAndPlace } from '/common/lib.js';
-import { canHack, canRoot, checkRootHost } from '/hack/lib.js';
+import { canHack, canRoot, checkRootServer } from '/hack/lib.js';
 
 export async function main(ns) {
     // arguments
@@ -77,7 +77,7 @@ export async function main(ns) {
             // Perform some analysis and categorize server in appropriate bins
             if (server.hasAdminRights || server.canRoot) {
                 // Admin rights are available, or root can be performed
-                await checkRootHost(ns, server);
+                await checkRootServer(ns, server);
                 if (server.maxRam > 0) {
                     // server can run things, it's a scriptHost
                     scriptHosts.push(server);
