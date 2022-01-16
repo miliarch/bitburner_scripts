@@ -95,7 +95,7 @@ export function removeImpossibleHackTargets(targets, stats, failedHackIgnoreThre
 // ########################
 
 export function rootServer(ns, server) {
-    for (var opener of playerPortOpeners()) {
+    for (var opener of playerPortOpeners(ns)) {
         opener(server.hostname);
     }
     var success;
@@ -115,10 +115,10 @@ export function rootServer(ns, server) {
 export function checkRootServer(ns, server) {
     // make sure server is rooted
     if (!server.hasAdminRights) {
-        if (playerPortOpeners().length >= server.numOpenPortsRequired) {
-            rootServer();
+        if (playerPortOpeners(ns).length >= server.numOpenPortsRequired) {
+            rootServer(ns, server);
         } else {
-            let out_str = `Cannot root ${server.hostname} (${playerPortOpeners().length}/${server.numOpenPortsRequired})`
+            let out_str = `Cannot root ${server.hostname} (${playerPortOpeners(ns).length}/${server.numOpenPortsRequired})`
             ns.toast(out_str, 'warning');
             ns.print(out_str);
         }
