@@ -22,19 +22,19 @@ export function playerPortOpeners(ns) {
     // Return list of port openers available to the player
     var portOpeners = [];
     if (ns.fileExists("BruteSSH.exe", "home")) {
-        portOpeners.push('brutessh');
+        portOpeners.push(ns.brutessh);
     }
     if (ns.fileExists("FTPCrack.exe", "home")) {
-        portOpeners.push('ftpcrack');
+        portOpeners.push(ns.ftpcrack);
     }
     if (ns.fileExists("relaySMTP.exe", "home")) {
-        portOpeners.push('relaysmtp');
+        portOpeners.push(ns.relaysmtp);
     }
     if (ns.fileExists("HTTPWorm.exe", "home")) {
-        portOpeners.push('httpworm');
+        portOpeners.push(ns.httpworm);
     }
     if (ns.fileExists("SQLInject.exe", "home")) {
-        portOpeners.push('sqlinject');
+        portOpeners.push(ns.sqlinject);
     }
     return portOpeners
 }
@@ -94,15 +94,37 @@ export function removeImpossibleHackTargets(targets, stats, failedHackIgnoreThre
 // ### Simple workflows ###
 // ########################
 
-export async function checkRootServer(ns, server) {
+export function rootServer(ns, server) {
+    for (var opener of playerPortOpeners()) {
+        opener(server.hostname);
+    }
+    var success;
+    success = ns.nuke(server.hostname);
+
+    var out_str;
+    if (success) {
+        out_str = `Successfully rooted ${server.hostname}`;
+        ns.toast(out_str, 'success');
+    } else {
+        out_str = `Failed to root ${server.hostname}`;
+        ns.toast(out_str, 'error');
+    }
+    ns.print(out_str);
+}
+
+export function checkRootServer(ns, server) {
     // make sure server is rooted
     if (!server.hasAdminRights) {
-        ns.exec('/hack/remote_root.js', 'home', 1, server.hostname);
-        while (!ns.hasRootAccess(server.hostname)) {
-            await ns.sleep(50);
+        if (playerPortOpeners().length >= server.numOpenPortsRequired) {
+            rootServer();
+        } else {
+            let out_str = `Cannot root ${server.hostname} (${playerPortOpeners().length}/${server.numOpenPortsRequired})`
+            ns.toast(out_str, 'warning');
+            ns.print(out_str);
         }
-        let out_str = `Successfully rooted ${target.hostname}`;
-        ns.toast(out_str);
+    } else {
+        let out_str = `Server ${server.hostname} already rooted`;
+        ns.toast(out_str, 'info');
         ns.print(out_str);
     }
 }
