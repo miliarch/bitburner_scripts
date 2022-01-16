@@ -77,7 +77,7 @@ export async function main(ns) {
             // Perform some analysis and categorize server in appropriate bins
             if (server.hasAdminRights || server.canRoot) {
                 // Admin rights are available, or root can be performed
-                await checkRootServer(ns, server);
+                await checkRootServer(ns, server, true);
                 if (server.maxRam > 0) {
                     // server can run things, it's a scriptHost
                     scriptHosts.push(server);

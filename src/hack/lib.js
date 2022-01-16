@@ -95,37 +95,37 @@ export function removeImpossibleHackTargets(targets, stats, failedHackIgnoreThre
 // ########################
 
 export function rootServer(ns, server) {
+    // Run all port openers against server, nuke server, return player's admin status
     for (var opener of playerPortOpeners(ns)) {
         opener(server.hostname);
     }
-    var success;
-    success = ns.nuke(server.hostname);
-
-    var out_str;
-    if (success) {
-        out_str = `Successfully rooted ${server.hostname}`;
-        ns.toast(out_str, 'success');
-    } else {
-        out_str = `Failed to root ${server.hostname}`;
-        ns.toast(out_str, 'error');
-    }
-    ns.print(out_str);
+    ns.nuke(server.hostname);
+    return ns.hasRootAccess(server.hostname)
 }
 
-export function checkRootServer(ns, server) {
+export function checkRootServer(ns, server, suppressFailure=false) {
     // make sure server is rooted
+    const operation = 'check_root_server'
+    var result = false;
+    var extra = {}
+    extra['success'] = `${server.hostname}`
+    extra['fail'] = `${server.hostname}`
     if (!server.hasAdminRights) {
         if (playerPortOpeners(ns).length >= server.numOpenPortsRequired) {
-            rootServer(ns, server);
+            result = rootServer(ns, server);
+            if (!result) {
+                extra['fail'] += `: executed routine but success check failed`
+            }
         } else {
-            let out_str = `Cannot root ${server.hostname} (${playerPortOpeners(ns).length}/${server.numOpenPortsRequired})`
-            ns.toast(out_str, 'warning');
-            ns.print(out_str);
+            extra['fail'] += `: not enough port openers: ${playerPortOpeners(ns).length} / ${server.numOpenPortsRequired}`
         }
     } else {
-        let out_str = `Server ${server.hostname} already rooted`;
-        ns.toast(out_str, 'info');
-        ns.print(out_str);
+        extra['fail'] += `: already rooted`;
+    }
+    if (!result && !suppressFailure) {
+        outputMessage(ns, result, true, operation, operation, extra);
+    } else if (result) {
+        outputMessage(ns, result, true, operation, operation, extra);
     }
 }
 
