@@ -1,6 +1,6 @@
 /** @param {NS} ns **/
 // Deploy script; exec arbitrary script on specified host with target and thread count
-import { killAllProcessesOnTarget, placeWorker, sanitizeScriptNameArgument } from "/common/lib";
+import { killAllProcessesOnTarget, placeWorker, sanitizeScriptNameArgument, checkCopyScripts } from "/common/lib.js";
 export async function main(ns) {
     var host = {};
     host['hostname'] = ns.args[1];
@@ -8,8 +8,9 @@ export async function main(ns) {
     var target = {};
     target['hostname'] = ns.args[2] ? ns.args[2] : host.hostname;
     target['script'] = sanitizeScriptNameArgument(ns.args[0]);
+    target['dependentScripts'] = ['/common/lib.js', '/hack/lib.js', '/config/operation_strings.txt']
     var threads = ns.args[3] ? ns.args[3] : 0;
-    await ns.scp(target.script, 'home', host.hostname);
+    await checkCopyScripts(ns, host, target);
     var scriptCost = ns.getScriptRam(target.script, 'home');
     var serverMaxRam = ns.getServerMaxRam(host.hostname);
     var result;

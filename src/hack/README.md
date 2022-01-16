@@ -2,7 +2,7 @@
 
 ## Preamble
 
-Hacking is central to the early game, and so focus of this document is the newer player. At the very start of the game, when you're strapped for RAM and money (which prevents you from obtaining more RAM), you will need to make all the workload placement decisions and deployments (copying `hack/worker_automatic*.js` files to servers and running them as needed). Later on, as you obtain more RAM, you'll be able to run deployment and scanning scripts from your home computer or purchased server, making workload management much faster and easier.
+Hacking is central to the early game, and so focus of this document is the newer player. At the very start of the game, when you're strapped for RAM and money (which prevents you from obtaining more RAM), you will need to make all the workload placement decisions and manually run `common/deploy_worker.js`. Later on, as you obtain more RAM, you'll be able to run scanning scripts from your home computer or purchased server, making workload management much faster and easier.
 
 These scripts both have very low requirements for usage, and fit in the category "rudimentary" in that they don't care much about efficiency or accuracy in the limited cases where the code is making decisions on behalf of the player. However, they certainly ease the task of ramping up money generation and hacking experience by helping the player make "thumb-in-the-air" decisions about deployment when resources are limited, and automating the discovery and deployment process when resources are ample.
 
@@ -18,7 +18,7 @@ run hack/remote_root.js n00dles
 
 ### Hack server at max supported threads for host
 
-Local (from any host that has the file):
+Local (from any host that has the required files):
 ```
 run hack/worker_automatic.js
 ```
