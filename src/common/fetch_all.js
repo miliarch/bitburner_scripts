@@ -38,6 +38,7 @@ export async function main(ns) {
         'singularity/crime_infos.js',
         'singularity/crime_loop.js',
         'singularity/lib.js',
+        'singularity/backdoor.js',
     ]
     
     // compile urls
