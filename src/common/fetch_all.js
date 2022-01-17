@@ -14,6 +14,7 @@ export async function main(ns) {
         'config/gang.txt',
         'config/operation_strings.txt',
         'config/hack.txt',
+        'config/singularity.txt',
         'hack/worker_grow.js',
         'hack/worker_weaken.js',
         'hack/worker_automatic.js',

@@ -174,5 +174,85 @@
       "type": "success",
       "value": "backdoored server"
     }
+  },
+  "export_json": {
+    "fail": {
+      "toast": true,
+      "print": true,
+      "tprint": true,
+      "type": "error",
+      "value": "could not export json"
+    },
+    "success": {
+      "toast": true,
+      "print": true,
+      "tprint": false,
+      "type": "info",
+      "value": "exported json"
+    }
+  },
+  "join_faction": {
+    "fail": {
+      "toast": true,
+      "print": true,
+      "tprint": false,
+      "type": "warning",
+      "value": "could not join faction"
+    },
+    "success": {
+      "toast": true,
+      "print": true,
+      "tprint": false,
+      "type": "info",
+      "value": "joined faction"
+    }
+  },
+  "purchase_tor_router": {
+    "fail": {
+      "toast": true,
+      "print": true,
+      "tprint": false,
+      "type": "warning",
+      "value": "could not purchase tor router"
+    },
+    "success": {
+      "toast": true,
+      "print": true,
+      "tprint": false,
+      "type": "success",
+      "value": "purchased tor router"
+    }
+  },
+  "upgrade_home_ram": {
+    "fail": {
+      "toast": true,
+      "print": true,
+      "tprint": false,
+      "type": "warning",
+      "value": "could not upgrade home ram"
+    },
+    "success": {
+      "toast": true,
+      "print": true,
+      "tprint": false,
+      "type": "success",
+      "value": "upgraded home ram"
+    }
+  },
+  "upgrade_home_cores": {
+    "fail": {
+      "toast": true,
+      "print": true,
+      "tprint": false,
+      "type": "warning",
+      "value": "could not upgrade home cores"
+    },
+    "success": {
+      "toast": true,
+      "print": true,
+      "tprint": false,
+      "type": "success",
+      "value": "upgraded home cores"
+    }
   }
 }

@@ -1,0 +1,29 @@
+{
+    "save_file": "/reports/singularity.txt",
+    "preferred_crime": "Homicide",
+    "join_factions": [
+        "Netburners",
+        "CyberSec",
+        "NiteSec",
+        "The Black Hand",
+        "Bitburners",
+        "Daedalus"
+    ],
+    "backdoor_targets": [
+        "CSEC",
+        "avmnite-02h",
+        "I.I.I.I",
+        "run4theh111z",
+        "w0r1d_d43m0n"
+    ],
+    "daemon_scripts": [
+        {
+            "filename": "/hack/scheduler.js",
+            "args": ["home", 30]
+        },
+        {
+            "filename": "/gang/minder.js",
+            "args": []
+        }
+    ]
+}

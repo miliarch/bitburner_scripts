@@ -44,13 +44,13 @@ export function sanitizeScriptNameArgument(scriptName) {
 // ### Miscellaneous helper functions ###
 // ######################################
 
-export function importJSON(ns, filename) {
+export function importJSON(ns, filename, printSuccess=false) {
     let fileExists = ns.fileExists(filename, 'home')
     var failString = `Failed to import JSON from ${filename}`
     if (fileExists) {
         let data = JSON.parse(ns.read(filename));
         if (data) {
-            toastPrint(ns, `Imported JSON from ${filename}`, 'info', false, false, false);
+            toastPrint(ns, `Imported JSON from ${filename}`, 'info', printSuccess, false, false);
             return data;
         } else {
             toastPrint(ns, `${failString}: parse result null`, 'error', true, true)
@@ -60,6 +60,21 @@ export function importJSON(ns, filename) {
         toastPrint(ns, `${failString}: file does not exist`, 'error', true, true);
         return false;
     }
+}
+
+export async function exportJSON(ns, filename, object, destructive=true) {
+    const operation = 'export_json';
+    var extra = {};
+    extra['success'] = `${filename}`
+    extra['fail'] = `${filename} does not exist`
+    if (destructive) {
+        // remove file before write - simplest way to verify write occurred
+        ns.rm(filename);
+    }
+    await ns.write(filename, JSON.stringify(object), 'w')
+    let success = ns.fileExists(filename);
+    let result = outputMessage(ns, success, true, operation, operation, extra);
+    return result
 }
 
 export function outputMessage(ns, result, expected, prepend, operation, extra) {
@@ -220,6 +235,7 @@ export function findHostsRecursive(ns, target, depth=1, exclusions=[], seen=[]) 
 
 export function findRouteToHost(ns, parent, server, target, route) {
     // copy from https://github.com/bitburner-official/bitburner-scripts/blob/master/find_server.js#L1
+    ns.disableLog('scan');
     const children = ns.scan(server);
     for (let child of children) {
         if (parent == child) {
