@@ -104,8 +104,8 @@ export function upgradeHomeRam(ns, playerMoney) {
     const operation = 'upgrade_home_ram';
     var extra = {};
     let cost = ns.getUpgradeHomeCoresCost();
-    extra['success'] = `\$${ns.nFormat(cost, '0.00a')}`
-    extra['fail'] = `\$${ns.nFormat(playerMoney, '0.00a')} / \$${ns.nFormat(cost, '0.00a')}`
+    extra['success'] = `\$${ns.nFormat(cost, '0.00a')}`;
+    extra['fail'] = `\$${ns.nFormat(playerMoney, '0.00a')} / \$${ns.nFormat(cost, '0.00a')}`;
     var success = playerMoney > cost;
     if (success) {
         success = ns.upgradeHomeRam();
@@ -119,13 +119,43 @@ export function upgradeHomeCores(ns, playerMoney) {
     const operation = 'upgrade_home_cores';
     var extra = {};
     let cost = ns.getUpgradeHomeCoresCost();
-    extra['success'] = `\$${ns.nFormat(cost, '0.00a')}`
-    extra['fail'] = `\$${ns.nFormat(playerMoney, '0.00a')} / \$${ns.nFormat(cost, '0.00a')}`
+    extra['success'] = `\$${ns.nFormat(cost, '0.00a')}`;
+    extra['fail'] = `\$${ns.nFormat(playerMoney, '0.00a')} / \$${ns.nFormat(cost, '0.00a')}`;
     var success = playerMoney > cost;
     if (success) {
         success = ns.upgradeHomeCores();
         extra['fail'] += ` - cause of failure unknown`
     }
+    let result = outputMessage(ns, success, true, operation, operation, extra);
+    return result;
+}
+
+export function purchaseAllPrograms(ns, playerTor, playerMoney, allowedPrograms=[]) {
+    let programsCosts = [
+        ['BruteSSH.exe', 500000],
+        ['FTPCrack.exe', 1500000],
+        ['relaySMTP.exe', 5000000],
+        ['HTTPWorm.exe', 30000000],
+        ['SQLInject.exe', 250000000],
+        ['ServerProfiler.exe', 500000],
+        ['DeepscanV1.exe', 500000],
+        ['DeepscanV2.exe', 25000000],
+        ['AutoLink.exe', 1000000],
+        ['Formulas.exe', 5000000000]
+    ]
+    for (let item of programsCosts) {
+        if (playerTor && !ns.fileExists(item[0]) && playerMoney > item[1] && allowedPrograms.includes(item[0])) {
+            purchaseProgram(ns, item[0], item[1], playerMoney)
+        }
+    }
+}
+
+export function purchaseProgram(ns, programName, programCost, playerMoney) {
+    const operation = 'purchase_program';
+    var extra = {};
+    extra['success'] = `${programName}: \$${ns.nFormat(programCost, '0.00a')}`;
+    extra['fail'] = `${programName}: \$${ns.nFormat(playerMoney, '0.00a')} / \$${ns.nFormat(programCost, '0.00a')}`;
+    let success = ns.purchaseProgram(programName);
     let result = outputMessage(ns, success, true, operation, operation, extra);
     return result;
 }

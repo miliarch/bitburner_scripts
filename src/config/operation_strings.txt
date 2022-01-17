@@ -254,5 +254,21 @@
       "type": "success",
       "value": "upgraded home cores"
     }
+  },
+  "purchase_program": {
+    "fail": {
+      "toast": true,
+      "print": true,
+      "tprint": false,
+      "type": "warning",
+      "value": "could not purchase program"
+    },
+    "success": {
+      "toast": true,
+      "print": true,
+      "tprint": false,
+      "type": "success",
+      "value": "purchased program"
+    }
   }
 }

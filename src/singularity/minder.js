@@ -1,7 +1,7 @@
 /** @param {NS} ns **/
 import { importJSON, exportJSON, placeWorker } from '/common/lib.js';
-import { backdoorServer, joinFaction, purchaseTorRouter,
-         upgradeHomeRam, upgradeHomeCores } from '/singularity/lib.js'
+import { backdoorServer, joinFaction, purchaseAllPrograms,
+         purchaseTorRouter, upgradeHomeRam, upgradeHomeCores } from '/singularity/lib.js'
 
 function initMinder(ns, saveFile) {
     let minder = ns.fileExists(saveFile) ? importJSON(ns, saveFile) : {};
@@ -11,9 +11,6 @@ function initMinder(ns, saveFile) {
     }
     if (typeof(minder.joinedFactions) == 'undefined') {
         minder.joinedFactions = [];
-    }
-    if (typeof(minder.daemonScripts) == 'undefined') {
-        minder.daemonScripts = [];
     }
     return minder
 }
@@ -66,7 +63,8 @@ export async function main(ns) {
         player.joinFactions = config['join_factions'];
         player.backdoorTargets = config['backdoor_targets'];
         player.preferredCrime = config['preferred_crime'];
-        minder.daemonScripts = config['daemon_scripts'];
+        player.purchasePrograms = config['purchase_programs'];
+        player.daemonScripts = config['daemon_scripts'];
         home.processes = ns.ps(home.hostname);
 
         // fun stuff
@@ -75,6 +73,9 @@ export async function main(ns) {
         if (!player.tor && player.money > 200000) {
             purchaseTorRouter(ns, player.money);
         }
+
+        // purchase programs
+        purchaseAllPrograms(ns, player.tor, player.money, player.purchasePrograms);
 
         // upgrade home ram if possible
         if (player.money > ns.getUpgradeHomeRamCost()) {
@@ -87,7 +88,7 @@ export async function main(ns) {
         }
 
         // start daemon scripts
-        for (let script of minder.daemonScripts) {
+        for (let script of player.daemonScripts) {
             var shouldStart = true;
             if (script.filename.includes('gang') && !ns.gang.inGang()) {
                 shouldStart = false;
