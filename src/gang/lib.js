@@ -11,7 +11,7 @@ export async function main(ns) {
 // ### Object setup ###
 // ####################
 
-function buildEquipmentStats(ns, equipmentName) {
+export function buildEquipmentStats(ns, equipmentName) {
     var stats = ns.gang.getEquipmentStats(equipmentName);
     for (const [key, value] of Object.entries(stats)) {
         var tmpStats = {}
@@ -23,7 +23,7 @@ function buildEquipmentStats(ns, equipmentName) {
     return stats;
 }
 
-function buildGangInfo(ns, config) {
+export function buildGangInfo(ns, config) {
     var gang = ns.gang.getGangInformation();
     gang.memberNameTemplate = config['member_name_template'];
     gang.minWantedThreshold = config['min_wanted_threshold'];
@@ -40,7 +40,7 @@ function buildGangInfo(ns, config) {
     return gang;
 }
 
-function buildEquipmentInfo(ns) {
+export function buildEquipmentInfo(ns) {
     var equipments = [];
     for (let name of ns.gang.getEquipmentNames()) {
         let equipment = {};
@@ -53,7 +53,7 @@ function buildEquipmentInfo(ns) {
     return equipments;
 }
 
-function buildMemberInfo(ns) {
+export function buildMemberInfo(ns) {
     var members = []
     for (let name of ns.gang.getMemberNames()) {
         var member = ns.gang.getMemberInformation(name);
@@ -63,7 +63,7 @@ function buildMemberInfo(ns) {
     return members 
 }
 
-function buildTaskInfo(ns) {
+export function buildTaskInfo(ns) {
     var tasks = [];
     for (let name of ns.gang.getTaskNames()) {
         tasks.push(ns.gang.getTaskStats(name));
@@ -76,7 +76,7 @@ function buildTaskInfo(ns) {
 // ### Miscellaneous helper functions ###
 // ######################################
 
-function calcExpIncreaseForSkillIncrease(skillIncrease) {
+export function calcExpIncreaseForSkillIncrease(skillIncrease) {
     // Take skillIncrease in multiplier form (e.g.: +10% == 1.1), return expIncrease in multiplier form (e.g.: +2.5% == 1.025)
     const percentPerLevel = 0.05;
     const expIncreasePerLevel = 1.25;
@@ -85,7 +85,7 @@ function calcExpIncreaseForSkillIncrease(skillIncrease) {
     return (roundHundreds(expMultiplier * expIncreasePerLevel) / 100) + 1;
 }
 
-function buyHackUpgradesForMember(ns, member, equipment, money, limit) {
+export function buyHackUpgradesForMember(ns, member, equipment, money, limit) {
     // filter non-hack non-augment equipment out of array
     var validUpgrades = equipment.filter(e => "hack" in e.stats && e.type != 'Augmentation');
 
@@ -108,7 +108,7 @@ function buyHackUpgradesForMember(ns, member, equipment, money, limit) {
     }
 }
 
-function buyHackAugmentationsForMember(ns, member, equipment, money, limit) {
+export function buyHackAugmentationsForMember(ns, member, equipment, money, limit) {
     // filter non-hack non-augment equipment out of array
     var validUpgrades = equipment.filter(e => "hack" in e.stats && e.type == 'Augmentation');
 
@@ -131,7 +131,7 @@ function buyHackAugmentationsForMember(ns, member, equipment, money, limit) {
     }
 }
 
-function updateTaskForMembers(ns, members, taskName, minHackingLevel) {
+export function updateTaskForMembers(ns, members, taskName, minHackingLevel) {
     for (let member of members) {
         if (member.task != taskName && member.hack >= minHackingLevel) {
             ns.gang.setMemberTask(member.name, taskName);
