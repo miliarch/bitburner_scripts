@@ -33,7 +33,7 @@ export async function main(ns) {
     const configFile = '/config/singularity.txt'
     const loopInterval = 1000;
     const loadDataEvery = 60000;  // duration in miliseconds
-    const saveDataEvery = 60000 * 5;  // duration in miliseconds
+    const saveDataEvery = 60000;  // duration in miliseconds
     
     // object initialization
     var config = importJSON(ns, configFile, true);
@@ -49,13 +49,11 @@ export async function main(ns) {
     var lastLoadTime = Date.now();
     var lastSaveTime = Date.now();
     while (true) {
-        // load data
+        // load config
         if (Date.now() - lastLoadTime > loadDataEvery) {
             config = importJSON(ns, configFile, true);
-            minder = initMinder(ns, config['save_file'], true);
             lastLoadTime = Date.now();
             ns.print('imported config:\n', config);
-            ns.print('imported minder:\n', minder);
         }
 
         // loop variables
