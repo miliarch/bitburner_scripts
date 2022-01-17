@@ -37,6 +37,7 @@ export async function main(ns) {
         'gang/lib.js',
         'hacknet/minder.js',
         'singularity/crime_infos.js',
+        'singularity/minder.js',
         'singularity/crime_loop.js',
         'singularity/lib.js',
         'singularity/backdoor.js',
