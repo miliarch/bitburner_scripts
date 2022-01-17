@@ -142,5 +142,37 @@
       "type": "success",
       "value": "rooted server"
     }
+  },
+  "connect_to_host": {
+    "fail": {
+      "toast": false,
+      "print": true,
+      "tprint": true,
+      "type": "warning",
+      "value": "could not connect to host"
+    },
+    "success": {
+      "toast": false,
+      "print": true,
+      "tprint": true,
+      "type": "info",
+      "value": "connected to host"
+    }
+  },
+  "backdoor_server": {
+    "fail": {
+      "toast": false,
+      "print": true,
+      "tprint": true,
+      "type": "warning",
+      "value": "could not backdoor server"
+    },
+    "success": {
+      "toast": true,
+      "print": true,
+      "tprint": true,
+      "type": "success",
+      "value": "backdoored server"
+    }
   }
 }

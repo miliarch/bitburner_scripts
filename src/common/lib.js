@@ -218,6 +218,27 @@ export function findHostsRecursive(ns, target, depth=1, exclusions=[], seen=[]) 
     return seen
 }
 
+export function findRouteToHost(ns, parent, server, target, route) {
+    // copy from https://github.com/bitburner-official/bitburner-scripts/blob/master/find_server.js#L1
+    const children = ns.scan(server);
+    for (let child of children) {
+        if (parent == child) {
+            continue;
+        }
+        if (child == target) {
+            route.unshift(child);
+            route.unshift(server);
+            return true;
+        }
+
+        if (findRouteToHost(ns, server, child, target, route)) {
+            route.unshift(server);
+            return true;
+        }
+    }
+    return false;
+}
+
 
 // ####################################
 // ### Server information functions ###
