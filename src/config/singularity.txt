@@ -1,6 +1,15 @@
 {
-    "save_file": "/reports/singularity.txt",
+    "minder_file": "/reports/singularity.txt",
+    "minder_asynchronous_port": 2,
+    "minder_synchronous_port": 3,
     "preferred_crime": "Homicide",
+    "strategies": [
+        {
+            "name": "gang",
+            "type": "hacking",
+            "faction": "NiteSec"
+        }
+    ],
     "join_factions": [
         "Netburners",
         "CyberSec",

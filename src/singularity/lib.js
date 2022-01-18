@@ -1,9 +1,85 @@
 /** @param {NS} ns **/
 // Function library for cross-script use
-import { findRouteToHost, outputMessage, toastPrint } from '/common/lib.js';
+import { findRouteToHost, importJSON, outputMessage, toastPrint } from '/common/lib.js';
 
 export async function main(ns) {
     ns.tprint('use me right, buddy')
+}
+
+
+// ####################
+// ### Calculations ###
+// ####################
+
+export function calcSecondsPerKarma(crime) {
+    return (1 / crime.stats.karma) * (crime.stats.time / 1000);
+}
+
+
+// ###########################
+// ### Information getters ###
+// ###########################
+
+export function getProgramsCosts() {
+    return [
+        ['BruteSSH.exe', 500000],
+        ['FTPCrack.exe', 1500000],
+        ['relaySMTP.exe', 5000000],
+        ['HTTPWorm.exe', 30000000],
+        ['SQLInject.exe', 250000000],
+        ['ServerProfiler.exe', 500000],
+        ['DeepscanV1.exe', 500000],
+        ['DeepscanV2.exe', 25000000],
+        ['AutoLink.exe', 1000000],
+        ['Formulas.exe', 5000000000]
+    ]
+}
+
+export function getPlayerPrograms(ns) {
+    var programs = [];
+    for (let item of getProgramsCosts()) {
+        let exists = ns.fileExists(item[0], 'home');
+        if (exists) {
+            programs.push(item[0]);
+        }
+    }
+    return programs;
+}
+
+export function getLowestProgramCost(programs) {
+    var lowestProgramCost = Number.MAX_SAFE_INTEGER;
+    for (let program of getProgramsCosts()) {
+        if (programs.includes(program[0]) && lowestProgramCost > program[1]) {
+            lowestProgramCost = program[1];
+        }
+    }
+    return lowestProgramCost
+}
+
+export function getCrimes(ns) {
+    const crimeNames = [
+        'Shoplift',
+        'Rob store',
+        'Mug someone',
+        'Larceny',
+        'Deal Drugs',
+        'Bond Forgery',
+        'Traffick illegal Arms',
+        'Homicide',
+        'Grand theft Auto',
+        'Kidnap and Ransom',
+        'Assassinate',
+        'Heist'
+    ]
+    var crimes = []
+    for (let name of crimeNames) {
+        let crime = {};
+        crime.name = name;
+        crime.chance = ns.getCrimeChance(name);
+        crime.stats = ns.getCrimeStats(name);
+        crimes.push(crime);
+    }
+    return crimes
 }
 
 
@@ -66,14 +142,14 @@ export async function backdoorServer(ns, hostname, tail=false, returnHome=true) 
     var extra = {};
     extra['success'] = `${target_server.hostname}`;
     extra['fail'] = `${target_server.hostname}`;
-    let result = outputMessage(ns, success, true, operation, operation, extra);
+    outputMessage(ns, success, true, operation, operation, extra);
 
     if (returnHome) {
         // return home if desired
         returnToHome(ns);
     }
 
-    return result
+    return success
 }
 
 export function joinFaction(ns, faction) {
@@ -86,33 +162,33 @@ export function joinFaction(ns, faction) {
     return result;
 }
 
-export function purchaseTorRouter(ns, playerMoney) {
+export function purchaseTorRouter(ns, playerMoney, cost=200000) {
     const operation = 'purchase_tor_router';
     var extra = {};
-    extra['success'] = `\$${ns.nFormat(200000, '0.00a')}`;
-    extra['fail'] = `\$${ns.nFormat(playerMoney, '0.00a')} / \$${ns.nFormat(200000, '0.00a')}`;
-    var success = playerMoney > 200000
+    extra['success'] = `\$${ns.nFormat(cost, '0.00a')}`;
+    extra['fail'] = `\$${ns.nFormat(playerMoney, '0.00a')} / \$${ns.nFormat(cost, '0.00a')}`;
+    var success = playerMoney > cost
     if (success) {
         success = ns.purchaseTor();
         extra['fail'] += ` - cause of failure unknown`;
     }
-    let result = outputMessage(ns, success, true, operation, operation, extra);
-    return result
+    outputMessage(ns, success, true, operation, operation, extra);
+    return [success, cost]
 }
 
 export function upgradeHomeRam(ns, playerMoney) {
     const operation = 'upgrade_home_ram';
     var extra = {};
-    let cost = ns.getUpgradeHomeCoresCost();
+    let cost = ns.getUpgradeHomeRamCost();
     extra['success'] = `\$${ns.nFormat(cost, '0.00a')}`;
     extra['fail'] = `\$${ns.nFormat(playerMoney, '0.00a')} / \$${ns.nFormat(cost, '0.00a')}`;
     var success = playerMoney > cost;
     if (success) {
         success = ns.upgradeHomeRam();
-        extra['fail'] += ` - cause of failure unknown`
+        extra['fail'] += ` - error unknown`
     }
-    let result = outputMessage(ns, success, true, operation, operation, extra);
-    return result;
+    outputMessage(ns, success, true, operation, operation, extra);
+    return [success, cost]
 }
 
 export function upgradeHomeCores(ns, playerMoney) {
@@ -120,34 +196,27 @@ export function upgradeHomeCores(ns, playerMoney) {
     var extra = {};
     let cost = ns.getUpgradeHomeCoresCost();
     extra['success'] = `\$${ns.nFormat(cost, '0.00a')}`;
-    extra['fail'] = `\$${ns.nFormat(playerMoney, '0.00a')} / \$${ns.nFormat(cost, '0.00a')}`;
+    extra['fail'] = `\$${ns.nFormat(cost, '0.00a')}`;
     var success = playerMoney > cost;
     if (success) {
         success = ns.upgradeHomeCores();
-        extra['fail'] += ` - cause of failure unknown`
+        extra['fail'] += ` - error unknown, check available money`
     }
-    let result = outputMessage(ns, success, true, operation, operation, extra);
-    return result;
+    outputMessage(ns, success, true, operation, operation, extra);
+    return [success, cost]
 }
 
-export function purchaseAllPrograms(ns, playerTor, playerMoney, allowedPrograms=[]) {
-    let programsCosts = [
-        ['BruteSSH.exe', 500000],
-        ['FTPCrack.exe', 1500000],
-        ['relaySMTP.exe', 5000000],
-        ['HTTPWorm.exe', 30000000],
-        ['SQLInject.exe', 250000000],
-        ['ServerProfiler.exe', 500000],
-        ['DeepscanV1.exe', 500000],
-        ['DeepscanV2.exe', 25000000],
-        ['AutoLink.exe', 1000000],
-        ['Formulas.exe', 5000000000]
-    ]
-    for (let item of programsCosts) {
-        if (playerTor && !ns.fileExists(item[0]) && playerMoney > item[1] && allowedPrograms.includes(item[0])) {
-            purchaseProgram(ns, item[0], item[1], playerMoney)
+export function purchaseAllPrograms(ns, player=ns.getPlayer(), allowedPrograms=importJSON(ns, '/config/singularity.txt').purchase_programs) {
+    for (let item of getProgramsCosts()) {
+        var results = []
+        if (player.tor && !ns.fileExists(item[0]) && player.money > item[1] && allowedPrograms.includes(item[0])) {
+            let result = purchaseProgram(ns, item[0], item[1], player.money)
+            if (result) {
+                results.push(result);
+            }
         }
     }
+    return results;
 }
 
 export function purchaseProgram(ns, programName, programCost, playerMoney) {
@@ -156,6 +225,10 @@ export function purchaseProgram(ns, programName, programCost, playerMoney) {
     extra['success'] = `${programName}: \$${ns.nFormat(programCost, '0.00a')}`;
     extra['fail'] = `${programName}: \$${ns.nFormat(playerMoney, '0.00a')} / \$${ns.nFormat(programCost, '0.00a')}`;
     let success = ns.purchaseProgram(programName);
-    let result = outputMessage(ns, success, true, operation, operation, extra);
-    return result;
+    outputMessage(ns, success, true, operation, operation, extra);
+    if (success) {
+        return [programName, programCost];
+    } else {
+        return false;
+    }
 }

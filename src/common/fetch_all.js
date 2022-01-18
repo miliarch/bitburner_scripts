@@ -36,11 +36,19 @@ export async function main(ns) {
         'gang/minder.js',
         'gang/lib.js',
         'hacknet/minder.js',
+        'singularity/purchase_tor_router.js',
+        'singularity/commit_crime.js',
+        'singularity/commit_crime_autoselect.js',
+        'singularity/purchase_all_programs.js',
         'singularity/crime_infos.js',
+        'singularity/check_home_upgrade_cores_cost.js',
+        'singularity/check_home_upgrade_ram_cost.js',
         'singularity/minder.js',
         'singularity/crime_loop.js',
         'singularity/lib.js',
         'singularity/backdoor.js',
+        'singularity/upgrade_home_cores.js',
+        'singularity/upgrade_home_ram.js',
     ]
     
     // compile urls

@@ -118,6 +118,28 @@ export async function writeMessageToPort(ns, port, message, blocking=true) {
     }
 }
 
+export function fetchMessageFromPort(port, peek=false) {
+    var data;
+    if (peek) {
+        data = port.peek();
+    } else {
+        data = port.read();
+    }
+    if (data != 'NULL PORT DATA') {
+        return JSON.parse(data);
+    } else {
+        return false
+    }
+}
+
+export function fetchAllMessagesFromPort(port) {
+    var messages = [];
+    while (!port.empty()) {
+        messages.push(fetchMessageFromPort(port));
+    }
+    return messages;
+}
+
 
 // ###############################################
 // ### Script and process management functions ###
