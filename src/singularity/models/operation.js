@@ -1,11 +1,13 @@
 /** @param {NS} ns **/
 
 export class Operation {
-    constructor(ns, name, scriptName, port, blocking=true, prependArgs=[], appendArgs=[]) {
+    constructor(ns, name, scriptName, sourcePort, destinationPort,
+                blocking=true, prependArgs=[], appendArgs=[]) {
         // required
         this.name = name;
         this.scriptName = scriptName;
-        this.port = port;
+        this.sourcePort = sourcePort;
+        this.destinationPort = destinationPort;
 
         // optional w/ defaults
         this.blocking = blocking;
@@ -57,5 +59,24 @@ export class Operation {
         let time = this.getTime(duration);
         this.nextAt = time;
         return time;
+    }
+
+    isValid() {
+        // a lazy check that all required properties are non-null
+        let properties = [
+            this.tag,
+            this.createdAt,
+            this.name,
+            this.scriptName,
+            this.sourcePort,
+            this.destinationPort,
+            this.status,
+        ]
+        for (let property of properties) {
+            if (!property) {
+                return false;
+            }
+        }
+        return true;
     }
 }

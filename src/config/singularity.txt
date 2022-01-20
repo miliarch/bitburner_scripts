@@ -15,7 +15,7 @@
         "CyberSec",
         "NiteSec",
         "The Black Hand",
-        "Bitburners",
+        "BitRunners",
         "Daedalus"
     ],
     "backdoor_targets": [
