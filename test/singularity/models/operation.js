@@ -1,10 +1,6 @@
 import { Operation } from '../../../src/singularity/models/operation.js';
 import { ns } from '../../test_helpers.js'
 
-export async function main(ns) {
-    // noop
-}
-
 // test vars
 let operation_name = 'test_operation';
 let operation_scriptName = '/some/script';
