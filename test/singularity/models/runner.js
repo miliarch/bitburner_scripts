@@ -16,26 +16,26 @@ let operation2 = new Operation(ns, '/some/script.js', 1, 2);
 
 // test optional input
 
-// test processOperations
-let processOperationsRunner = new Runner(ns, 1);
-processOperationsRunner.insertOperation(operation1);
-await processOperationsRunner.processOperations();
-console.assert(processOperationsRunner.loopCount == 1, 'processOperationsRunner.loopCount is 1', processOperationsRunner.loopCount);
-console.assert(processOperationsRunner.operationCount == 1, 'processOperationsRunner.operationCount is 1', processOperationsRunner.operationCount);
-console.assert(processOperationsRunner.operations.length == 0, 'processOperationsRunner.operations.length is 0', processOperationsRunner.operations.length, processOperationsRunner.operations)
+// test processOperation
+let processOperationRunner = new Runner(ns, 1);
+processOperationRunner.insertOperation(operation1);
+await processOperationRunner.processOperation();
+console.assert(processOperationRunner.loopCount == 1, 'processOperationRunner.loopCount is 1', processOperationRunner.loopCount);
+console.assert(processOperationRunner.operationCount == 1, 'processOperationRunner.operationCount is 1', processOperationRunner.operationCount);
+console.assert(processOperationRunner.operations.length == 0, 'processOperationRunner.operations.length is 0', processOperationRunner.operations.length, processOperationRunner.operations)
 
-processOperationsRunner.resetOperationCount();
-processOperationsRunner.resetLoopCount();
-console.assert(processOperationsRunner.loopCount == 0, 'processOperationsRunner.loopCount is 0', processOperationsRunner.loopCount);
-console.assert(processOperationsRunner.operationCount == 0, 'processOperationsRunner.operationCount is 0', processOperationsRunner.operationCount);
+processOperationRunner.resetOperationCount();
+processOperationRunner.resetLoopCount();
+console.assert(processOperationRunner.loopCount == 0, 'processOperationRunner.loopCount is 0', processOperationRunner.loopCount);
+console.assert(processOperationRunner.operationCount == 0, 'processOperationRunner.operationCount is 0', processOperationRunner.operationCount);
 
-processOperationsRunner.insertOperation(operation1);
-processOperationsRunner.insertOperation(stopRunnerOperation);
-processOperationsRunner.insertOperation(operation2);
-await processOperationsRunner.processOperations();
-console.assert(processOperationsRunner.loopCount == 1, 'processOperationsRunner.loopCount is 1', processOperationsRunner.loopCount);
-console.assert(processOperationsRunner.operationCount == 1, 'processOperationsRunner.operationCount is 1', processOperationsRunner.operationCount);
-console.assert(processOperationsRunner.operations.length == 2, 'processOperationsRunner.operations.length is 2', processOperationsRunner.operations.length, processOperationsRunner.operations)
+processOperationRunner.insertOperation(operation1);
+processOperationRunner.insertOperation(stopRunnerOperation);
+processOperationRunner.insertOperation(operation2);
+await processOperationRunner.processOperation();
+console.assert(processOperationRunner.loopCount == 1, 'processOperationRunner.loopCount is 1', processOperationRunner.loopCount);
+console.assert(processOperationRunner.operationCount == 1, 'processOperationRunner.operationCount is 1', processOperationRunner.operationCount);
+console.assert(processOperationRunner.operations.length == 2, 'processOperationRunner.operations.length is 2', processOperationRunner.operations.length, processOperationRunner.operations)
 
 // test programLoop (TODO: consider cleanup() once implemented - this result will change)
 let programLoopRunner = new Runner(ns, 1);

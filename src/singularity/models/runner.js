@@ -43,7 +43,7 @@ export class Runner {
 
     async programLoop() {
         while (this.online) {
-            await this.processOperations();
+            await this.processOperation();
             await this.ns.sleep(this.interval)
         }
         this.resetLoopCount();
@@ -59,9 +59,9 @@ export class Runner {
         return false
     }
 
-    async processOperations() {
-        this.busy = true;
+    async processOperation() {
         if (this.operations.length > 0) {
+            this.busy = true;
             this.incrementLoopCount();
             this.incrementOperationCount();
             let operation = this.pickNextOperation();
@@ -73,7 +73,7 @@ export class Runner {
             } else {
                 this.processAsynchronousOperation(operation);
             }
+            this.busy = false;
         }
-        this.busy = false;
     }
 }
